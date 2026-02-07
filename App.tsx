@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Screen, Task, TaskStatus, Transaction, Submission, TutorialConfig, UserProfile, AppAnalytics } from './types';
+import { Screen, Task, TaskStatus, Transaction, Submission, TutorialConfig, UserProfile, AppAnalytics, AdminCredentials, UserAccount } from './types';
 import { MOCK_TASKS } from './constants';
 import HomeScreen from './components/HomeScreen';
 import WalletScreen from './components/WalletScreen';
 import SubmitTaskScreen from './components/SubmitTaskScreen';
 import WithdrawScreen from './components/WithdrawScreen';
 import AdminScreen from './components/AdminScreen';
+import AdminLoginScreen from './components/AdminLoginScreen';
 import ProfileScreen from './components/ProfileScreen';
 import LoginScreen from './components/LoginScreen';
 import TutorialScreen from './components/TutorialScreen';
@@ -15,19 +16,30 @@ import { Home, Wallet, User, Bell, PlayCircle } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<Screen>('HOME');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
   
+  // State for registered users
+  const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>([
+    { name: 'Rahat Islam', email: 'rahat@test.com', password: 'password123' }
+  ]);
+
+  const [adminCreds, setAdminCreds] = useState<AdminCredentials>({
+    username: 'akibneel',
+    password: 'Akib@100'
+  });
+
   const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: 'Rahat Islam',
-    email: 'rahat.official@takaearn.bd',
-    phone: '+8801712345678',
+    name: 'Guest User',
+    email: '',
+    phone: '',
     joinDate: 'Oct 2023'
   });
 
   const [analytics, setAnalytics] = useState<AppAnalytics>({
-    totalSignups: 0,
+    totalSignups: 1,
     activeLast72h: 0,
     currentlyOnline: 0,
     tutorialViewsLast72h: 0,
@@ -259,13 +271,26 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogin = () => {
+  const handleSignup = (userData: UserAccount) => {
+    setRegisteredUsers(prev => [...prev, userData]);
+    setAnalytics(prev => ({ ...prev, totalSignups: prev.totalSignups + 1 }));
+    showSmsNotification("Account Created", "You can now log in with your credentials.");
+  };
+
+  const handleLogin = (user: UserAccount) => {
+    setUserProfile({
+      name: user.name,
+      email: user.email,
+      phone: '',
+      joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    });
     setIsLoggedIn(true);
     setCurrentScreen('HOME');
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    setIsAdminAuthenticated(false);
     setCurrentScreen('HOME');
   };
 
@@ -277,7 +302,13 @@ const App: React.FC = () => {
 
   const renderScreen = () => {
     if (!isLoggedIn) {
-      return <LoginScreen onLogin={handleLogin} />;
+      return (
+        <LoginScreen 
+          onLogin={handleLogin} 
+          onSignup={handleSignup} 
+          users={registeredUsers} 
+        />
+      );
     }
 
     switch (currentScreen) {
@@ -304,6 +335,15 @@ const App: React.FC = () => {
           />
         ) : <HomeScreen balance={balance} tasks={tasks} onTaskClick={handleTaskClick} userName={userProfile.name} />;
       case 'ADMIN':
+        if (!isAdminAuthenticated) {
+          return (
+            <AdminLoginScreen 
+              credentials={adminCreds}
+              onLoginSuccess={() => setIsAdminAuthenticated(true)} 
+              onBack={() => setCurrentScreen('PROFILE')} 
+            />
+          );
+        }
         return (
           <AdminScreen 
             analytics={analytics}
@@ -311,6 +351,8 @@ const App: React.FC = () => {
             withdrawals={transactions.filter(tx => tx.type === 'WITHDRAWAL' && tx.status === TaskStatus.PENDING)}
             tasks={tasks}
             tutorialConfig={tutorialConfig}
+            adminCredentials={adminCreds}
+            onUpdateAdminCredentials={setAdminCreds}
             onAction={handleAdminAction} 
             onWithdrawAction={handleAdminWithdrawAction}
             onAddTask={handleAddTask}

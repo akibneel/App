@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Submission, TaskStatus, Transaction, Task, TutorialConfig, TutorialStep, AppAnalytics } from '../types';
-import { ShieldAlert, Check, X, User, Edit3, Wallet, CreditCard, Plus, Trash2, LayoutList, CheckCircle2, Image as ImageIcon, Upload, Info, ExternalLink, ArrowLeft, History as HistoryIcon, BadgeCheck, DollarSign, PlayCircle, Video, ListOrdered, Link, PlusCircle, Layout, MessageSquare, Megaphone, BarChart3, Users, Zap, PlaySquare, UserMinus, Activity } from 'lucide-react';
+import { Submission, TaskStatus, Transaction, Task, TutorialConfig, TutorialStep, AppAnalytics, AdminCredentials } from '../types';
+import { ShieldAlert, Check, X, User, Edit3, Wallet, CreditCard, Plus, Trash2, LayoutList, CheckCircle2, Image as ImageIcon, Upload, Info, ExternalLink, ArrowLeft, History as HistoryIcon, BadgeCheck, DollarSign, PlayCircle, Video, ListOrdered, Link, PlusCircle, Layout, MessageSquare, Megaphone, BarChart3, Users, Zap, PlaySquare, UserMinus, Activity, Shield, Lock, Save, Eye, EyeOff } from 'lucide-react';
 
 interface AdminScreenProps {
   analytics: AppAnalytics;
@@ -9,6 +9,8 @@ interface AdminScreenProps {
   withdrawals: Transaction[];
   tasks: Task[];
   tutorialConfig: TutorialConfig;
+  adminCredentials: AdminCredentials;
+  onUpdateAdminCredentials: (creds: AdminCredentials) => void;
   onAction: (id: string, status: TaskStatus, approvedQuantity?: number) => void;
   onWithdrawAction: (id: string, status: TaskStatus) => void;
   onAddTask: (task: Task) => void;
@@ -17,8 +19,8 @@ interface AdminScreenProps {
   onUpdateTutorialConfig: (config: TutorialConfig) => void;
 }
 
-const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withdrawals, tasks, tutorialConfig, onAction, onWithdrawAction, onAddTask, onUpdateTask, onDeleteTask, onUpdateTutorialConfig }) => {
-  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'LEADS' | 'RECEIVED' | 'WITHDRAWALS' | 'TASKS' | 'TUTORIAL_MANAGE'>('OVERVIEW');
+const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withdrawals, tasks, tutorialConfig, adminCredentials, onUpdateAdminCredentials, onAction, onWithdrawAction, onAddTask, onUpdateTask, onDeleteTask, onUpdateTutorialConfig }) => {
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'LEADS' | 'RECEIVED' | 'WITHDRAWALS' | 'TASKS' | 'TUTORIAL_MANAGE' | 'SECURITY'>('OVERVIEW');
   const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showTaskForm, setShowTaskForm] = useState(false);
@@ -26,6 +28,12 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
   const formRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Security State
+  const [newAdminUser, setNewAdminUser] = useState(adminCredentials.username);
+  const [newAdminPass, setNewAdminPass] = useState(adminCredentials.password);
+  const [showPass, setShowPass] = useState(false);
+  const [isSavingSecurity, setIsSavingSecurity] = useState(false);
+
   // Local Tutorial Edit State
   const [editTutorial, setEditTutorial] = useState<TutorialConfig>(tutorialConfig);
 
@@ -226,6 +234,21 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
     alert("Global Hub configuration updated successfully!");
   };
 
+  const handleSaveSecurity = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAdminUser || !newAdminPass) return;
+    
+    setIsSavingSecurity(true);
+    setTimeout(() => {
+      onUpdateAdminCredentials({
+        username: newAdminUser,
+        password: newAdminPass
+      });
+      setIsSavingSecurity(false);
+      alert("Admin credentials updated successfully!");
+    }, 1500);
+  };
+
   const groupedPending = pendingLeads.reduce((groups, sub) => {
     const dateKey = sub.timestamp.split('T')[0];
     if (!groups[dateKey]) groups[dateKey] = [];
@@ -344,13 +367,21 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
           </div>
         </div>
         
-        <button 
-          onClick={handleOpenNewTaskForm}
-          className="bg-slate-900 text-white p-3 rounded-2xl shadow-xl flex items-center gap-2 active:scale-95 transition-all"
-        >
-          <Plus size={18} />
-          <span className="text-[10px] font-black uppercase tracking-widest">New Task</span>
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setActiveTab('SECURITY')}
+            className={`p-3 rounded-2xl shadow-xl transition-all ${activeTab === 'SECURITY' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-400'}`}
+          >
+            <Shield size={18} />
+          </button>
+          <button 
+            onClick={handleOpenNewTaskForm}
+            className="bg-slate-900 text-white p-3 rounded-2xl shadow-xl flex items-center gap-2 active:scale-95 transition-all"
+          >
+            <Plus size={18} />
+            <span className="text-[10px] font-black uppercase tracking-widest">New Task</span>
+          </button>
+        </div>
       </div>
 
       <div className="flex bg-slate-100 p-1 rounded-[22px] mb-6 overflow-x-auto no-scrollbar gap-1">
@@ -391,6 +422,86 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
           Global Hub
         </button>
       </div>
+
+      {activeTab === 'SECURITY' && (
+        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+           <div className="bg-slate-950 rounded-[40px] p-8 text-white shadow-2xl relative overflow-hidden">
+             <div className="absolute -top-24 -left-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
+             
+             <div className="flex items-center gap-4 mb-8 relative z-10">
+               <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                 <Shield size={24} />
+               </div>
+               <div>
+                 <h3 className="text-lg font-black tracking-tight leading-none text-white">Security Console</h3>
+                 <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mt-1">Update Master Credentials</p>
+               </div>
+             </div>
+
+             <form onSubmit={handleSaveSecurity} className="space-y-6 relative z-10">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-1">New Administrator Username</label>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-indigo-400 transition-colors">
+                      <User size={18} />
+                    </div>
+                    <input 
+                      type="text"
+                      value={newAdminUser}
+                      onChange={(e) => setNewAdminUser(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 p-5 pl-12 rounded-3xl text-white font-bold focus:outline-none focus:border-indigo-500 transition-all placeholder:text-white/10"
+                      placeholder="Username"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-1">New Administrative Password</label>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-indigo-400 transition-colors">
+                      <Lock size={18} />
+                    </div>
+                    <input 
+                      type={showPass ? 'text' : 'password'}
+                      value={newAdminPass}
+                      onChange={(e) => setNewAdminPass(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 p-5 pl-12 pr-12 rounded-3xl text-white font-bold focus:outline-none focus:border-indigo-500 transition-all placeholder:text-white/10"
+                      placeholder="••••••••"
+                      required
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPass(!showPass)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
+                    >
+                      {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-indigo-500/10 border border-indigo-500/20 p-5 rounded-[28px] flex items-start gap-4 mb-2">
+                   <Info size={16} className="text-indigo-400 shrink-0 mt-0.5" />
+                   <p className="text-[10px] text-indigo-200/60 font-medium leading-relaxed">
+                     Changes to these credentials will take effect immediately. Ensure you save these elsewhere as there is no automated recovery process for the admin panel.
+                   </p>
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={isSavingSecurity}
+                  className="w-full bg-indigo-600 py-6 rounded-3xl text-white font-black text-[11px] uppercase tracking-[3px] shadow-[0_0_30px_rgba(79,70,229,0.3)] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                  {isSavingSecurity ? (
+                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <>Update Admin Access <Save size={18} /></>
+                  )}
+                </button>
+             </form>
+           </div>
+        </div>
+      )}
 
       {activeTab === 'OVERVIEW' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

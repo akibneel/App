@@ -1,15 +1,19 @@
 
 import React, { useState } from 'react';
-import { Mail, Lock, User, Eye, EyeOff, ShieldCheck, ArrowRight, Star, Users, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ShieldCheck, ArrowRight, Star, Users, CheckCircle2, AlertCircle } from 'lucide-react';
+import { UserAccount } from '../types';
 
 interface LoginScreenProps {
-  onLogin: () => void;
+  onLogin: (user: UserAccount) => void;
+  onSignup: (user: UserAccount) => void;
+  users: UserAccount[];
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onSignup, users }) => {
   const [authMode, setAuthMode] = useState<'LOGIN' | 'SIGNUP'>('LOGIN');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -21,12 +25,36 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     
-    // Simulate official server-side verification
     setTimeout(() => {
-      onLogin();
-      setIsLoading(false);
-    }, 1800);
+      if (authMode === 'LOGIN') {
+        const foundUser = users.find(u => u.email === formData.email && u.password === formData.password);
+        if (foundUser) {
+          onLogin(foundUser);
+        } else {
+          setError('Invalid login details. Please check your email/password.');
+          setIsLoading(false);
+        }
+      } else {
+        // Signup Mode
+        const exists = users.find(u => u.email === formData.email);
+        if (exists) {
+          setError('An account with this email already exists.');
+          setIsLoading(false);
+        } else {
+          const newUser: UserAccount = {
+            name: formData.fullName,
+            email: formData.email,
+            password: formData.password
+          };
+          onSignup(newUser);
+          setAuthMode('LOGIN');
+          setFormData({ fullName: '', email: '', password: '' });
+          setIsLoading(false);
+        }
+      }
+    }, 1200);
   };
 
   return (
@@ -36,60 +64,69 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         <div className="flex items-center gap-2">
           <div className="flex -space-x-2">
             {[1, 2, 3].map(i => (
-              <div key={i} className="w-5 h-5 rounded-full border-2 border-slate-900 bg-slate-700 ring-1 ring-white/10"></div>
+              <div key={i} className={`w-5 h-5 rounded-full border-2 border-slate-900 ring-1 ring-white/10 ${i === 1 ? 'bg-emerald-500' : i === 2 ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
             ))}
           </div>
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">120k+ Users Verified</span>
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Join 120k+ Verified Users</span>
         </div>
         <div className="flex items-center gap-1 text-amber-400">
           <Star size={10} fill="currentColor" />
-          <span className="text-[10px] font-black italic">OFFICIAL PARTNER</span>
+          <span className="text-[10px] font-black italic">SECURE HUB</span>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col px-8 pb-12 pt-10 overflow-y-auto no-scrollbar">
         {/* Brand Identity */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-green-600 rounded-[24px] flex items-center justify-center shadow-2xl shadow-green-200 mb-4 relative">
-            <span className="text-white text-3xl font-black">৳</span>
+          <div className="w-16 h-16 bg-green-600 rounded-[24px] flex items-center justify-center shadow-2xl shadow-green-200 mb-4 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-white/10 group-hover:bg-white/20 transition-all"></div>
+            <span className="text-white text-3xl font-black relative z-10">৳</span>
           </div>
           
           <h1 className="text-2xl font-black text-slate-900 text-center tracking-tight mb-1">
-            {authMode === 'LOGIN' ? 'Welcome Back' : 'Get Started'}
+            {authMode === 'LOGIN' ? 'Welcome Back' : 'Create Account'}
           </h1>
           <p className="text-slate-500 text-center text-xs font-medium max-w-[280px]">
             {authMode === 'LOGIN' 
-              ? 'Access your earning dashboard securely.' 
-              : 'Join the official micro-tasking network in BD.'}
+              ? 'Enter your credentials to access your earnings.' 
+              : 'Sign up to start earning daily task rewards.'}
           </p>
         </div>
 
         {/* Professional Tab Switcher */}
-        <div className="bg-slate-100 p-1 rounded-2xl flex mb-8 relative">
+        <div className="bg-slate-100 p-1 rounded-2xl flex mb-6 relative">
           <div 
             className={`absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-white rounded-xl shadow-sm transition-transform duration-300 ease-out ${authMode === 'SIGNUP' ? 'translate-x-full' : 'translate-x-0'}`}
           />
           <button 
-            onClick={() => setAuthMode('LOGIN')}
+            onClick={() => { setAuthMode('LOGIN'); setError(null); }}
             className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest relative z-10 transition-colors ${authMode === 'LOGIN' ? 'text-slate-900' : 'text-slate-400'}`}
           >
             Log In
           </button>
           <button 
-            onClick={() => setAuthMode('SIGNUP')}
+            onClick={() => { setAuthMode('SIGNUP'); setError(null); }}
             className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest relative z-10 transition-colors ${authMode === 'SIGNUP' ? 'text-slate-900' : 'text-slate-400'}`}
           >
             Sign Up
           </button>
         </div>
 
-        {/* Official Email Form */}
+        {/* Error Messaging */}
+        {error && (
+          <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-3 animate-in shake duration-500">
+            <AlertCircle className="text-rose-500 shrink-0 mt-0.5" size={16} />
+            <p className="text-rose-600 text-[11px] font-bold leading-tight">{error}</p>
+          </div>
+        )}
+
+        {/* Official Auth Form */}
         <form onSubmit={handleAuthSubmit} className="space-y-4">
           {authMode === 'SIGNUP' && (
             <div className="animate-in slide-in-from-top-2 duration-300">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Full Name</label>
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Full Legal Name</label>
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-green-600 transition-colors">
                   <User size={18} />
                 </div>
                 <input 
@@ -98,7 +135,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   placeholder="Enter your name"
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                  className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-sm font-bold text-slate-800 focus:outline-none focus:border-green-500 focus:bg-white transition-all"
+                  className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-sm font-bold text-slate-800 focus:outline-none focus:border-green-500 focus:bg-white transition-all shadow-sm"
                 />
               </div>
             </div>
@@ -106,30 +143,27 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Email Address</label>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+            <div className="relative group">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-green-600 transition-colors">
                 <Mail size={18} />
               </div>
               <input 
                 type="email"
                 required
-                placeholder="name@official.com"
+                placeholder="name@email.com"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-sm font-bold text-slate-800 focus:outline-none focus:border-green-500 focus:bg-white transition-all"
+                className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-sm font-bold text-slate-800 focus:outline-none focus:border-green-500 focus:bg-white transition-all shadow-sm"
               />
             </div>
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-2 px-1">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Password</label>
-              {authMode === 'LOGIN' && (
-                <button type="button" className="text-[10px] font-bold text-green-600 hover:text-green-700">Forgot?</button>
-              )}
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Security Password</label>
             </div>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+            <div className="relative group">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-green-600 transition-colors">
                 <Lock size={18} />
               </div>
               <input 
@@ -138,7 +172,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 pr-12 rounded-2xl text-sm font-bold text-slate-800 focus:outline-none focus:border-green-500 focus:bg-white transition-all"
+                className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 pr-12 rounded-2xl text-sm font-bold text-slate-800 focus:outline-none focus:border-green-500 focus:bg-white transition-all shadow-sm"
               />
               <button 
                 type="button"
@@ -153,14 +187,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           <button 
             type="submit"
             disabled={isLoading}
-            className="w-full bg-green-600 p-5 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-green-100 active:scale-[0.98] transition-all disabled:opacity-50 mt-6"
+            className="w-full bg-slate-900 p-5 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-slate-200 active:scale-[0.98] transition-all disabled:opacity-50 mt-6"
           >
             {isLoading ? (
               <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (
               <>
-                <span className="font-black text-white text-sm uppercase tracking-widest">
-                  {authMode === 'LOGIN' ? 'Secure Login' : 'Create Official Account'}
+                <span className="font-black text-white text-[12px] uppercase tracking-[2px]">
+                  {authMode === 'LOGIN' ? 'Authorized Login' : 'Register Account'}
                 </span>
                 <ArrowRight size={18} className="text-white/60" />
               </>
@@ -168,35 +202,21 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           </button>
         </form>
 
-        {/* Benefits List for Sign Up */}
-        {authMode === 'SIGNUP' && (
-          <div className="mt-8 grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
-              <CheckCircle2 size={14} className="text-green-500" />
-              <span className="text-[9px] font-black text-slate-600 uppercase tracking-tight">Verified Payouts</span>
-            </div>
-            <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
-              <CheckCircle2 size={14} className="text-green-500" />
-              <span className="text-[9px] font-black text-slate-600 uppercase tracking-tight">SSL Protection</span>
-            </div>
-          </div>
-        )}
-
         <div className="mt-auto pt-10">
           <div className="flex items-center justify-center gap-3 mb-6">
             <div className="h-[1px] bg-slate-100 flex-1"></div>
-            <Users size={14} className="text-slate-300" />
+            <ShieldCheck size={14} className="text-green-500" />
             <div className="h-[1px] bg-slate-100 flex-1"></div>
           </div>
           
-          <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-100">
-            <div className="bg-white p-2.5 rounded-2xl shadow-sm">
-              <ShieldCheck size={20} className="text-green-600 shrink-0" />
+          <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 flex gap-4">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
+               <Users size={18} className="text-slate-400" />
             </div>
-            <div className="flex-1">
-              <p className="text-[10px] font-black text-slate-800 uppercase tracking-wider mb-0.5">Secure Data Protocol</p>
+            <div>
+              <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-1">Secure Network</p>
               <p className="text-[10px] text-slate-500 leading-tight font-medium">
-                We use bank-grade encryption to protect your account. Your earnings are safe and verified daily.
+                Your data is encrypted using end-to-end security protocols. We never share your account information with third parties.
               </p>
             </div>
           </div>

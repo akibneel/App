@@ -8,6 +8,17 @@ export enum TaskStatus {
   REJECTED = 'Rejected'
 }
 
+export interface AdminCredentials {
+  username: string;
+  password: string;
+}
+
+export interface UserAccount {
+  name: string;
+  email: string;
+  password: string;
+}
+
 export interface AppAnalytics {
   totalSignups: number;
   activeLast72h: number;
