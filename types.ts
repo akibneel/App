@@ -1,0 +1,83 @@
+
+export type Screen = 'AUTH' | 'HOME' | 'WALLET' | 'PROFILE' | 'SUBMIT_TASK' | 'ADMIN' | 'WITHDRAW' | 'TUTORIAL' | 'ACCOUNT_SETTINGS';
+
+export enum TaskStatus {
+  PENDING = 'Pending',
+  RECEIVED = 'Received',
+  APPROVED = 'Approved',
+  REJECTED = 'Rejected'
+}
+
+export interface AppAnalytics {
+  totalSignups: number;
+  activeLast72h: number;
+  currentlyOnline: number;
+  tutorialViewsLast72h: number;
+  uninstalls: number;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  rate: number;
+  rateType: string;
+  buttonText: string;
+  limit: number;
+  completed: number;
+  icon: string;
+  color: string;
+  category: 'Social' | 'Survey' | 'Ads' | 'Bonus';
+  description: string;
+  tutorialUrl?: string;
+}
+
+export interface TutorialStep {
+  id: string;
+  title: string;
+  desc: string;
+  iconType: 'check' | 'book' | 'star' | 'info';
+  buttonText?: string;
+  buttonUrl?: string;
+}
+
+export interface TutorialConfig {
+  heroVideoUrl: string;
+  supportTelegram: string; 
+  telegramChannel: string;
+  steps: TutorialStep[];
+}
+
+export interface Transaction {
+  id: string;
+  taskName: string;
+  amount: number;
+  date: string;
+  status: TaskStatus;
+  details?: string;
+  submissionId?: string;
+  type?: 'EARNING' | 'WITHDRAWAL' | 'EXCHANGE';
+  method?: string;
+}
+
+export interface Submission {
+  id: string;
+  userId: string;
+  userName: string;
+  taskId: string;
+  taskTitle: string;
+  rate: number;
+  rateType: string;
+  userQuantity: number;
+  amount: number;
+  details: string;
+  screenshot?: string;
+  status: TaskStatus;
+  timestamp: string;
+}
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  phone: string;
+  joinDate: string;
+}
