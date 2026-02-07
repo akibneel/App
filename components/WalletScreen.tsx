@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Transaction, TaskStatus, AppConfig } from '../types';
 import { ArrowDownLeft, ArrowUpRight, History, Wallet, Clock, CreditCard } from 'lucide-react';
@@ -18,22 +17,22 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ balance, appConfig, transac
           <Wallet size={24} />
         </div>
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none">My Wallet</h2>
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Earnings & Payouts</p>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">My Wallet</h2>
+          <p className="text-[9px] font-medium text-slate-400 uppercase tracking-widest mt-1">Earnings & Payouts</p>
         </div>
       </div>
 
-      {/* Hero Balance Card - Focus on Main Balance (Available) */}
+      {/* Hero Balance Card */}
       <div className="bg-slate-900 rounded-[40px] p-8 text-white mb-8 shadow-2xl relative overflow-hidden">
         {/* Abstract background highlights */}
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
         <div className="absolute top-20 -left-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
         
         <div className="relative z-10">
-          <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1.5 opacity-60">Main Balance (Available)</p>
+          <p className="text-slate-400 text-[10px] font-medium uppercase tracking-widest mb-1.5 opacity-60">Main Balance (Available)</p>
           <div className="flex items-baseline gap-2 mb-8">
-            <span className="text-2xl font-black text-emerald-500">৳</span>
-            <h1 className="text-5xl font-black tracking-tighter leading-none">{balance.available.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h1>
+            <span className="text-2xl font-semibold text-emerald-500">৳</span>
+            <h1 className="text-5xl font-bold tracking-tighter leading-none">{balance.available.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h1>
           </div>
           
           <div className="w-full">
@@ -43,13 +42,9 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ balance, appConfig, transac
                   <Clock size={16} className="text-amber-400" />
                 </div>
                 <div>
-                  <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest">In Review</p>
-                  <p className="text-sm font-black text-white">৳{balance.pending.toLocaleString()}</p>
+                  <p className="text-slate-400 text-[9px] font-medium uppercase tracking-widest">In Review</p>
+                  <p className="text-sm font-semibold text-white">৳{balance.pending.toLocaleString()}</p>
                 </div>
-              </div>
-              <div className="text-right">
-                 <p className="text-[8px] font-black text-white/30 uppercase tracking-widest">Expected</p>
-                 <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">~24 Hours</p>
               </div>
             </div>
           </div>
@@ -59,10 +54,10 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ balance, appConfig, transac
       {/* Quick Actions / Withdrawal */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-5 px-1">
-          <h3 className="font-black text-slate-900 text-[11px] uppercase tracking-widest flex items-center gap-2">
+          <h3 className="font-semibold text-slate-900 text-[11px] uppercase tracking-widest flex items-center gap-2">
             <CreditCard size={15} className="text-emerald-500" /> Withdrawal Gateways
           </h3>
-          <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-tighter">Min ৳{appConfig.minWithdrawal}</span>
+          <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-tighter">Min ৳{appConfig.minWithdrawal}</span>
         </div>
         
         <div className="grid grid-cols-4 gap-3">
@@ -75,7 +70,7 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ balance, appConfig, transac
               <div className="h-9 w-full flex items-center justify-center overflow-hidden">
                  <img src={gateway.icon} alt={gateway.name} className="h-full object-contain filter transition-all" />
               </div>
-              <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest group-hover:text-emerald-600">{gateway.name}</span>
+              <span className="text-[8px] font-medium text-slate-500 uppercase tracking-widest group-hover:text-emerald-600">{gateway.name}</span>
             </button>
           ))}
         </div>
@@ -84,10 +79,10 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ balance, appConfig, transac
       {/* Recent History Preview */}
       <div>
         <div className="flex justify-between items-center mb-5 px-1">
-          <h3 className="font-black text-slate-900 text-[11px] uppercase tracking-widest flex items-center gap-2">
+          <h3 className="font-semibold text-slate-900 text-[11px] uppercase tracking-widest flex items-center gap-2">
             <History size={15} className="text-emerald-500" /> Recent Activity
           </h3>
-          <button className="text-emerald-600 text-[10px] font-black uppercase tracking-[2px] border-b-2 border-emerald-100 pb-0.5">Full View</button>
+          <button className="text-emerald-600 text-[10px] font-semibold uppercase tracking-[2px] border-b-2 border-emerald-100 pb-0.5">Full View</button>
         </div>
         
         <div className="space-y-4">
@@ -103,17 +98,17 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ balance, appConfig, transac
                 {tx.type === 'WITHDRAWAL' ? <ArrowDownLeft size={20} /> : tx.status === TaskStatus.APPROVED ? <ArrowUpRight size={20} /> : <Clock size={20} />}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-black text-slate-900 text-[13px] truncate tracking-tight leading-none">{tx.taskName}</p>
+                <p className="font-semibold text-slate-900 text-[13px] truncate tracking-tight leading-none">{tx.taskName}</p>
                 <div className="flex items-center gap-1.5 mt-2">
-                   <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{tx.date}</p>
+                   <p className="text-[9px] text-slate-400 font-medium uppercase tracking-widest">{tx.date}</p>
                    <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                   <span className={`text-[8px] font-black uppercase tracking-widest ${tx.status === TaskStatus.APPROVED ? 'text-emerald-600' : tx.status === TaskStatus.PENDING ? 'text-amber-600' : 'text-rose-600'}`}>
+                   <span className={`text-[8px] font-semibold uppercase tracking-widest ${tx.status === TaskStatus.APPROVED ? 'text-emerald-600' : tx.status === TaskStatus.PENDING ? 'text-amber-600' : 'text-rose-600'}`}>
                     {tx.status}
                   </span>
                 </div>
               </div>
               <div className="text-right pl-2">
-                <p className={`text-[15px] font-black tracking-tight ${tx.type === 'WITHDRAWAL' || tx.status === TaskStatus.REJECTED ? 'text-rose-600' : 'text-slate-900'}`}>
+                <p className={`text-[15px] font-bold tracking-tight ${tx.type === 'WITHDRAWAL' || tx.status === TaskStatus.REJECTED ? 'text-rose-600' : 'text-slate-900'}`}>
                   {tx.type === 'WITHDRAWAL' ? '-' : '+'}৳{tx.amount.toLocaleString()}
                 </p>
               </div>
@@ -125,7 +120,7 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ balance, appConfig, transac
               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
                 <History className="text-slate-200" size={32} />
               </div>
-              <p className="text-slate-400 font-black uppercase tracking-widest text-[9px]">Transactions will appear here</p>
+              <p className="text-slate-400 font-medium uppercase tracking-widest text-[9px]">Transactions will appear here</p>
             </div>
           )}
         </div>

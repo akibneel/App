@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Task } from '../types';
 import { ArrowLeft, Camera, Send, Info, X, Image as ImageIcon, PlayCircle } from 'lucide-react';
@@ -66,7 +65,7 @@ const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ task, onSubmit, onB
         <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
           <ArrowLeft size={24} className="text-slate-800" />
         </button>
-        <h2 className="text-xl font-bold text-slate-800">Submit Task</h2>
+        <h2 className="text-xl font-semibold text-slate-800">Submit Task</h2>
       </div>
 
       <div className="p-6">
@@ -78,21 +77,21 @@ const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ task, onSubmit, onB
             </div>
             <div className="flex-1">
               <h3 className="text-xl font-bold text-slate-800">{task.title}</h3>
-              <p className="text-green-600 font-bold">Rate: ৳{task.rate} / {getUnitLabel(task.rateType)}</p>
+              <p className="text-green-600 font-semibold">Rate: ৳{task.rate} / {getUnitLabel(task.rateType)}</p>
             </div>
           </div>
           
           {task.tutorialUrl && (
             <button 
               onClick={() => window.open(task.tutorialUrl, '_blank')}
-              className="w-full mb-4 bg-blue-600 text-white p-4 rounded-2xl font-black text-[11px] uppercase tracking-[2px] flex items-center justify-center gap-3 shadow-xl shadow-blue-100 active:scale-95 transition-all"
+              className="w-full mb-4 bg-blue-600 text-white p-4 rounded-2xl font-semibold text-[11px] uppercase tracking-[2px] flex items-center justify-center gap-3 shadow-xl shadow-blue-100 active:scale-95 transition-all"
             >
               <PlayCircle size={20} /> How to complete this task?
             </button>
           )}
 
           <div className="bg-slate-50 p-4 rounded-2xl">
-            <p className="text-slate-600 text-sm leading-relaxed">
+            <p className="text-slate-600 text-sm leading-relaxed font-normal">
               {task.description || "Earn rewards by completing this daily task. Follow instructions carefully to avoid rejection."}
             </p>
           </div>
@@ -101,7 +100,7 @@ const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ task, onSubmit, onB
         {/* Submission Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-slate-800 font-bold mb-2 text-sm ml-1">Submit Your Details</label>
+            <label className="block text-slate-800 font-semibold mb-2 text-sm ml-1">Submit Your Details</label>
             <textarea 
               placeholder="Enter ID / Username / Link here (Separate multiple with commas)..."
               value={details}
@@ -110,13 +109,13 @@ const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ task, onSubmit, onB
               className="w-full bg-white p-4 rounded-2xl border-2 border-slate-100 focus:border-green-500 focus:outline-none transition-all custom-shadow resize-none text-black font-medium"
               required
             />
-            <p className="text-slate-400 text-[10px] mt-2 ml-1 flex items-center gap-1">
+            <p className="text-slate-400 text-[10px] mt-2 ml-1 flex items-center gap-1 font-medium">
               <Info size={12} /> Double check your submission before hitting the button.
             </p>
           </div>
 
           <div>
-            <label className="block text-slate-800 font-bold mb-2 text-sm ml-1">
+            <label className="block text-slate-800 font-semibold mb-2 text-sm ml-1">
               Quantity ({getUnitLabel(task.rateType)})
             </label>
             <input 
@@ -130,7 +129,7 @@ const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ task, onSubmit, onB
           </div>
 
           <div>
-            <label className="block text-slate-800 font-bold mb-2 text-sm ml-1">Upload Screenshot (Optional)</label>
+            <label className="block text-slate-800 font-semibold mb-2 text-sm ml-1">Upload Screenshot (Optional)</label>
             <input 
               type="file" 
               accept="image/*" 
@@ -147,7 +146,7 @@ const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ task, onSubmit, onB
                 <div className="w-full h-full relative group p-2">
                   <img src={screenshot} alt="Preview" className="w-full h-32 object-cover rounded-2xl" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl">
-                    <span className="text-white text-xs font-black uppercase">Change Image</span>
+                    <span className="text-white text-xs font-semibold uppercase">Change Image</span>
                   </div>
                   <button 
                     onClick={removeScreenshot}
@@ -159,7 +158,7 @@ const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ task, onSubmit, onB
               ) : (
                 <>
                   <Camera size={32} />
-                  <span className="text-xs font-bold uppercase tracking-widest">Click to upload image</span>
+                  <span className="text-xs font-semibold uppercase tracking-widest">Click to upload image</span>
                 </>
               )}
             </div>
@@ -168,19 +167,19 @@ const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ task, onSubmit, onB
           <div className="pt-4 border-t border-slate-100 space-y-4">
             <div className="flex justify-between items-center px-1">
               <span className="text-slate-500 font-medium">Estimated Reward</span>
-              <span className="text-2xl font-black text-slate-800">৳{totalAmount.toLocaleString()}</span>
+              <span className="text-2xl font-bold text-slate-800">৳{totalAmount.toLocaleString()}</span>
             </div>
 
             <button 
               type="submit"
               disabled={isSubmitting || !details.trim()}
-              className="w-full bg-green-600 py-5 rounded-2xl text-white font-bold text-lg shadow-xl shadow-green-100 active:scale-[0.98] disabled:bg-slate-300 disabled:shadow-none transition-all flex items-center justify-center gap-2"
+              className="w-full bg-green-600 py-5 rounded-2xl text-white font-semibold text-lg shadow-xl shadow-green-100 active:scale-[0.98] disabled:bg-slate-300 disabled:shadow-none transition-all flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
-                <span className="animate-pulse font-black uppercase tracking-widest text-sm">Processing...</span>
+                <span className="animate-pulse font-semibold uppercase tracking-widest text-sm">Processing...</span>
               ) : (
                 <>
-                  <span className="font-black uppercase tracking-widest text-sm">{task.buttonText || 'Submit for Approval'}</span>
+                  <span className="font-semibold uppercase tracking-widest text-sm">{task.buttonText || 'Submit for Approval'}</span>
                   <Send size={20} />
                 </>
               )}

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import { Screen, Task, TaskStatus, Transaction, Submission, TutorialConfig, UserProfile, AppAnalytics, AdminCredentials, UserAccount, UserBalance, AppConfig } from './types';
 import { MOCK_TASKS } from './constants';
 import HomeScreen from './components/HomeScreen';
@@ -12,20 +11,9 @@ import ProfileScreen from './components/ProfileScreen';
 import LoginScreen from './components/LoginScreen';
 import TutorialScreen from './components/TutorialScreen';
 import AccountSettingsScreen from './components/AccountSettingsScreen';
-import { Home, Wallet, User, Bell, PlayCircle, Sparkles, X, MessageSquare, Send, BrainCircuit } from 'lucide-react';
+import { Home, Wallet, User, Bell, PlayCircle } from 'lucide-react';
 
 const App: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState<Screen>('HOME');
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  
-  // AI Assistant State
-  const [isAiOpen, setIsAiOpen] = useState(false);
-  const [aiMessage, setAiMessage] = useState('');
-  const [aiResponse, setAiResponse] = useState<string | null>(null);
-  const [isAiLoading, setIsAiLoading] = useState(false);
-
   // STORAGE KEYS
   const STORAGE_KEY_USERS = 'akibpay_users';
   const STORAGE_KEY_TASKS = 'akibpay_tasks';
@@ -34,10 +22,20 @@ const App: React.FC = () => {
   const STORAGE_KEY_TRANSACTIONS = 'akibpay_transactions';
   const STORAGE_KEY_TUTORIAL = 'akibpay_tutorial_config';
   const STORAGE_KEY_CONFIG = 'akibpay_app_config';
+  const STORAGE_KEY_CURRENT_USER = 'akibpay_current_session';
+
+  // Initialize state from local storage or defaults
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem(STORAGE_KEY_CURRENT_USER) !== null;
+  });
+  
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState<Screen>('HOME');
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_USERS);
-    return saved ? JSON.parse(saved) : [{ name: 'Rahat Islam', email: 'rahat@test.com', password: 'password123' }];
+    return saved ? JSON.parse(saved) : [{ name: 'Rahat Islam', email: 'rahat@test.com', password: 'password123', failedAttempts: 0 }];
   });
 
   const [tasks, setTasks] = useState<Task[]>(() => {
@@ -90,11 +88,23 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : defaultTutorial;
   });
 
-  const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: 'Guest User',
-    email: '',
-    phone: '',
-    joinDate: 'Oct 2023'
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
+    const savedSession = localStorage.getItem(STORAGE_KEY_CURRENT_USER);
+    if (savedSession) {
+      const user = JSON.parse(savedSession);
+      return {
+        name: user.name,
+        email: user.email,
+        phone: '',
+        joinDate: 'Oct 2023'
+      };
+    }
+    return {
+      name: 'Guest User',
+      email: '',
+      phone: '',
+      joinDate: 'Oct 2023'
+    };
   });
 
   const activeBalance = userBalances[userProfile.email] || { total: 0, available: 0, pending: 0 };
@@ -114,11 +124,31 @@ const App: React.FC = () => {
 
   const [analytics, setAnalytics] = useState<AppAnalytics>({
     totalSignups: registeredUsers.length,
-    activeLast72h: 124,
-    currentlyOnline: 18,
-    tutorialViewsLast72h: 456,
-    uninstalls: 5
+    activeLast72h: 0,
+    currentlyOnline: 0,
+    tutorialViewsLast72h: 0,
+    uninstalls: 0
   });
+
+  // Calculate real analytics based on actual app state
+  useEffect(() => {
+    const now = new Date();
+    const threeDaysAgo = new Date(now.getTime() - (72 * 60 * 60 * 1000));
+    
+    // Count unique emails that have made a submission in the last 72 hours
+    const activeUserEmails = new Set(
+      submissions
+        .filter(s => new Date(s.timestamp) > threeDaysAgo)
+        .map(s => s.userEmail)
+    );
+
+    setAnalytics(prev => ({
+      ...prev,
+      totalSignups: registeredUsers.length,
+      activeLast72h: activeUserEmails.size,
+      currentlyOnline: isLoggedIn ? 1 : 0 // Simplified: only the current user is tracked as online locally
+    }));
+  }, [registeredUsers, submissions, isLoggedIn]);
 
   const [notification, setNotification] = useState<{show: boolean, title: string, body: string} | null>(null);
 
@@ -127,27 +157,51 @@ const App: React.FC = () => {
     setTimeout(() => setNotification(null), 5000);
   };
 
-  const handleAskAi = async () => {
-    if (!aiMessage.trim()) return;
-    setIsAiLoading(true);
-    setAiResponse(null);
+  const handleAuthAttempt = (email: string, password?: string): { success: boolean, error?: string, user?: UserAccount } => {
+    const emailLower = email.toLowerCase().trim();
+    const user = registeredUsers.find(u => u.email.toLowerCase().trim() === emailLower);
 
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `User is using Akib Pay, a task earning app in Bangladesh. User asks: "${aiMessage}". 
-        Give a short, helpful response in Bengali and English (mixed) about how they can earn more or solve their issue. 
-        Current available balance: ৳${activeBalance.available}. Min withdrawal: ৳${appConfig.minWithdrawal}.`,
-        config: {
-          systemInstruction: "You are the Akib Pay Earning Assistant. You help users maximize their daily income from micro-tasks in Bangladesh. Be polite and encouraging."
-        }
-      });
-      setAiResponse(response.text || "Sorry, I couldn't process that. Please try again.");
-    } catch (err) {
-      setAiResponse("Assistant error: Ensure API_KEY is set in Netlify Environment Variables.");
-    } finally {
-      setIsAiLoading(false);
+    if (!user) {
+      return { success: false, error: 'Account not found.' };
+    }
+
+    // Check Lockout
+    if (user.lockoutUntil) {
+      const lockoutTime = new Date(user.lockoutUntil).getTime();
+      const now = Date.now();
+      if (now < lockoutTime) {
+        const remainingMinutes = Math.ceil((lockoutTime - now) / 60000);
+        return { success: false, error: `Access restricted. Try again after ${remainingMinutes} minutes.` };
+      }
+    }
+
+    // If password not provided, we just checked existence/lockout
+    if (password === undefined) return { success: true, user };
+
+    // Check Password
+    if (user.password === password) {
+      // Success: Reset failures
+      const updatedUsers = registeredUsers.map(u => 
+        u.email === user.email ? { ...u, failedAttempts: 0, lockoutUntil: undefined } : u
+      );
+      setRegisteredUsers(updatedUsers);
+      return { success: true, user };
+    } else {
+      // Failure: Increment and check lockout
+      const newFailCount = (user.failedAttempts || 0) + 1;
+      let lockoutUntil: string | undefined = undefined;
+      let error = 'Invalid password.';
+
+      if (newFailCount >= 3) {
+        lockoutUntil = new Date(Date.now() + 3600000).toISOString(); // 1 hour
+        error = 'Too many failed attempts. Access restricted for 1 hour.';
+      }
+
+      const updatedUsers = registeredUsers.map(u => 
+        u.email === user.email ? { ...u, failedAttempts: newFailCount, lockoutUntil } : u
+      );
+      setRegisteredUsers(updatedUsers);
+      return { success: false, error };
     }
   };
 
@@ -219,20 +273,24 @@ const App: React.FC = () => {
   };
 
   const handleLogin = (user: UserAccount) => {
+    const sessionUser = { name: user.name, email: user.email };
+    localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify(sessionUser));
     setUserProfile({ name: user.name, email: user.email, phone: '', joinDate: 'Oct 2023' });
     setIsLoggedIn(true);
     setCurrentScreen('HOME');
   };
 
   const handleSignup = (user: UserAccount) => {
-    setRegisteredUsers(prev => [...prev, user]);
+    setRegisteredUsers(prev => [...prev, { ...user, failedAttempts: 0 }]);
     showSmsNotification("Welcome!", "Account created successfully.");
   };
 
   const handleLogout = () => {
+    localStorage.removeItem(STORAGE_KEY_CURRENT_USER);
     setIsLoggedIn(false);
     setIsAdminAuthenticated(false);
     setCurrentScreen('HOME');
+    setUserProfile({ name: 'Guest User', email: '', phone: '', joinDate: 'Oct 2023' });
   };
 
   const handleAdminAction = (id: string, status: TaskStatus, approvedQuantity?: number) => {
@@ -292,12 +350,18 @@ const App: React.FC = () => {
 
   const handleSaveProfile = (profile: UserProfile) => {
     setUserProfile(profile);
+    // Sync to session storage too if needed
+    const savedSession = localStorage.getItem(STORAGE_KEY_CURRENT_USER);
+    if (savedSession) {
+      const session = JSON.parse(savedSession);
+      localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify({ ...session, name: profile.name }));
+    }
     showSmsNotification("Profile Updated", "Changes saved.");
     setCurrentScreen('PROFILE');
   };
 
   const renderScreen = () => {
-    if (!isLoggedIn) return <LoginScreen onLogin={handleLogin} onSignup={handleSignup} users={registeredUsers} />;
+    if (!isLoggedIn) return <LoginScreen onLogin={handleLogin} onSignup={handleSignup} onAuthAttempt={handleAuthAttempt} />;
     if (currentScreen === 'ADMIN_LOGIN' && !isAdminAuthenticated) return <AdminLoginScreen credentials={adminCreds} onLoginSuccess={() => setIsAdminAuthenticated(true)} onBack={() => setCurrentScreen('PROFILE')} />;
     if (isAdminAuthenticated && currentScreen === 'ADMIN') {
       return (
@@ -306,6 +370,7 @@ const App: React.FC = () => {
           tutorialConfig={tutorialConfig} appConfig={appConfig} adminCredentials={adminCreds} onUpdateAdminCredentials={setAdminCreds}
           onAction={handleAdminAction} onWithdrawAction={handleWithdrawAction} onAddTask={handleAddTask} onUpdateTask={handleUpdateTask}
           onDeleteTask={handleDeleteTask} onUpdateTutorialConfig={setTutorialConfig} onUpdateAppConfig={setAppConfig}
+          onBack={() => setCurrentScreen('PROFILE')}
         />
       );
     }
@@ -324,80 +389,12 @@ const App: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto bg-slate-50 min-h-screen shadow-2xl relative flex flex-col font-sans">
-      {/* AI Assistant Floating Bubble (The requested Bubble) */}
-      {isLoggedIn && (
-        <div className="ai-bubble" onClick={() => setIsAiOpen(true)}>
-          <div className="ai-pulse"></div>
-          <BrainCircuit size={28} />
-        </div>
-      )}
-
-      {/* AI Assistant Drawer */}
-      {isAiOpen && (
-        <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm flex flex-col justify-end animate-in fade-in duration-300">
-          <div className="bg-white rounded-t-[40px] p-6 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 max-h-[80vh] flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white">
-                  <Sparkles size={20} />
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-900 text-sm tracking-tight leading-none">Smart Assistant</h3>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">AI Powered Support</p>
-                </div>
-              </div>
-              <button onClick={() => setIsAiOpen(false)} className="p-2 bg-slate-100 rounded-full text-slate-400 hover:text-slate-600">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto no-scrollbar py-4 space-y-4">
-              <div className="bg-emerald-50 p-4 rounded-3xl border border-emerald-100">
-                <p className="text-[12px] text-emerald-800 font-medium leading-relaxed">
-                  Hi {userProfile.name}! I am your personal AI guide. Ask me how to earn more or how to withdraw!
-                </p>
-              </div>
-
-              {aiResponse && (
-                <div className="bg-slate-900 p-4 rounded-3xl text-white shadow-xl animate-in slide-in-from-left-4 duration-300">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles size={14} className="text-emerald-400" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Gemini Response</span>
-                  </div>
-                  <p className="text-[12px] font-medium leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-4 pb-4">
-              <div className="relative group">
-                <input 
-                  type="text" 
-                  value={aiMessage}
-                  onChange={(e) => setAiMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAskAi()}
-                  placeholder="Ask me anything..."
-                  className="w-full bg-slate-100 p-5 pr-14 rounded-3xl font-bold text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500 transition-all"
-                />
-                <button 
-                  onClick={handleAskAi}
-                  disabled={isAiLoading || !aiMessage.trim()}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-emerald-600 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all disabled:opacity-50"
-                >
-                  {isAiLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Send size={18} />}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {notification && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-[200] animate-in slide-in-from-top-4 duration-500">
           <div className="bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl flex gap-4 items-start">
              <div className="bg-emerald-500 p-2 rounded-xl text-white shadow-lg shadow-emerald-500/20"><Bell size={18} /></div>
              <div>
-                <h4 className="text-[11px] font-black text-white uppercase tracking-widest">{notification.title}</h4>
+                <h4 className="text-[11px] font-semibold text-white uppercase tracking-widest">{notification.title}</h4>
                 <p className="text-[10px] text-white/60 font-medium leading-tight mt-1">{notification.body}</p>
              </div>
           </div>
@@ -409,16 +406,16 @@ const App: React.FC = () => {
       {isLoggedIn && currentScreen !== 'SUBMIT_TASK' && currentScreen !== 'WITHDRAW' && currentScreen !== 'ADMIN' && currentScreen !== 'ADMIN_LOGIN' && (
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/80 backdrop-blur-xl border-t border-slate-100 px-6 py-4 flex justify-between items-center z-50">
           <button onClick={() => setCurrentScreen('HOME')} className={`flex flex-col items-center gap-1 transition-all ${currentScreen === 'HOME' ? 'text-emerald-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
-            <Home size={22} /><span className="text-[8px] font-black uppercase tracking-tighter">Tasks</span>
+            <Home size={22} /><span className="text-[8px] font-semibold uppercase tracking-tighter">Tasks</span>
           </button>
           <button onClick={() => setCurrentScreen('WALLET')} className={`flex flex-col items-center gap-1 transition-all ${currentScreen === 'WALLET' ? 'text-emerald-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
-            <Wallet size={22} /><span className="text-[8px] font-black uppercase tracking-tighter">Wallet</span>
+            <Wallet size={22} /><span className="text-[8px] font-semibold uppercase tracking-tighter">Wallet</span>
           </button>
           <button onClick={() => setCurrentScreen('TUTORIAL')} className={`flex flex-col items-center gap-1 transition-all ${currentScreen === 'TUTORIAL' ? 'text-emerald-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
-            <PlayCircle size={22} /><span className="text-[8px] font-black uppercase tracking-tighter">Learn</span>
+            <PlayCircle size={22} /><span className="text-[8px] font-semibold uppercase tracking-tighter">Learn</span>
           </button>
           <button onClick={() => setCurrentScreen('PROFILE')} className={`flex flex-col items-center gap-1 transition-all ${currentScreen === 'PROFILE' ? 'text-emerald-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
-            <User size={22} /><span className="text-[8px] font-black uppercase tracking-tighter">Profile</span>
+            <User size={22} /><span className="text-[8px] font-semibold uppercase tracking-tighter">Profile</span>
           </button>
         </div>
       )}

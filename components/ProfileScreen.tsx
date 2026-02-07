@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { User, Settings, Shield, LogOut, ChevronRight, Send, Megaphone } from 'lucide-react';
 import { UserProfile } from '../types';
@@ -57,7 +56,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
   return (
     <div className="p-6 animate-in slide-in-from-left-10 duration-500">
       <div className="flex flex-col items-center mb-10 mt-8">
-        <div className="w-28 h-28 bg-gradient-to-tr from-green-500 to-emerald-400 rounded-[35px] flex items-center justify-center text-white text-4xl font-bold shadow-xl shadow-green-100 mb-4 border-4 border-white">
+        <div className="w-28 h-28 bg-gradient-to-tr from-green-500 to-emerald-400 rounded-[35px] flex items-center justify-center text-white text-4xl font-semibold shadow-xl shadow-green-100 mb-4 border-4 border-white">
           {getInitials(userProfile.name)}
         </div>
         <h2 className="text-2xl font-bold text-slate-800">{userProfile.name}</h2>
@@ -73,7 +72,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <div className="bg-slate-50 p-2 rounded-xl">
               {item.icon}
             </div>
-            <span className={`flex-1 font-bold text-sm ${item.isLast ? 'text-red-500' : 'text-slate-700'}`}>
+            <span className={`flex-1 font-semibold text-sm ${item.isLast ? 'text-red-500' : 'text-slate-700'}`}>
               {item.label}
             </span>
             {!item.isLast && <ChevronRight size={18} className="text-slate-300" />}
@@ -82,7 +81,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
       </div>
 
       <div className="mt-8 text-center">
-        <p className="text-slate-300 text-[10px] font-bold uppercase tracking-[4px]">Akib Pay v3.1.2</p>
+        <p className="text-slate-300 text-[10px] font-medium uppercase tracking-[4px]">Akib Pay v3.1.2</p>
       </div>
       
       <div className="h-24"></div>

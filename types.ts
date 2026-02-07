@@ -17,6 +17,8 @@ export interface UserAccount {
   name: string;
   email: string;
   password: string;
+  failedAttempts?: number;
+  lockoutUntil?: string; // ISO string
 }
 
 export interface AppAnalytics {

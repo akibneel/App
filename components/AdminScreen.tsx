@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Submission, TaskStatus, Transaction, Task, TutorialConfig, TutorialStep, AppAnalytics, AdminCredentials, AppConfig, WithdrawalMethod } from '../types';
 import { ShieldAlert, Check, X, User, Edit3, Wallet, CreditCard, Plus, Trash2, LayoutList, CheckCircle2, Image as ImageIcon, Upload, Info, ExternalLink, ArrowLeft, History as HistoryIcon, BadgeCheck, DollarSign, PlayCircle, Video, ListOrdered, Link, PlusCircle, Layout, MessageSquare, Megaphone, BarChart3, Users, Zap, PlaySquare, UserMinus, Activity, Shield, Lock, Save, Eye, EyeOff, Landmark } from 'lucide-react';
@@ -19,9 +18,10 @@ interface AdminScreenProps {
   onDeleteTask: (id: string) => void;
   onUpdateTutorialConfig: (config: TutorialConfig) => void;
   onUpdateAppConfig: (config: AppConfig) => void;
+  onBack: () => void;
 }
 
-const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withdrawals, tasks, tutorialConfig, appConfig, adminCredentials, onUpdateAdminCredentials, onAction, onWithdrawAction, onAddTask, onUpdateTask, onDeleteTask, onUpdateTutorialConfig, onUpdateAppConfig }) => {
+const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withdrawals, tasks, tutorialConfig, appConfig, adminCredentials, onUpdateAdminCredentials, onAction, onWithdrawAction, onAddTask, onUpdateTask, onDeleteTask, onUpdateTutorialConfig, onUpdateAppConfig, onBack }) => {
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'LEADS' | 'RECEIVED' | 'WITHDRAWALS' | 'TASKS' | 'TUTORIAL_MANAGE' | 'FINANCE' | 'SECURITY'>('OVERVIEW');
   const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -316,7 +316,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
         {Object.keys(groupedItems).sort((a,b)=>b.localeCompare(a)).map((dateKey) => (
           <div key={dateKey} className="space-y-4">
             <div className="flex items-center gap-3 px-2">
-              <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">{getHeaderDate(dateKey)} {tabType === 'RECEIVED' ? 'RECEIVED' : 'QUEUE'}</span>
+              <span className="text-[10px] font-semibold text-slate-800 uppercase tracking-widest">{getHeaderDate(dateKey)} {tabType === 'RECEIVED' ? 'RECEIVED' : 'QUEUE'}</span>
             </div>
             <div className="space-y-4">
               {groupedItems[dateKey].map((sub) => {
@@ -331,22 +331,22 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                           <User size={18} />
                         </div>
                         <div>
-                          <h4 className={`font-black text-[13px] ${style.text} leading-none truncate tracking-tight`}>{sub.userName}</h4>
-                          <p className="text-[8px] font-bold text-slate-500 uppercase mt-1 tracking-widest">Submitter</p>
+                          <h4 className={`font-semibold text-[13px] ${style.text} leading-none truncate tracking-tight`}>{sub.userName}</h4>
+                          <p className="text-[8px] font-medium text-slate-500 uppercase mt-1 tracking-widest">Submitter</p>
                         </div>
                       </div>
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                      <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tighter">
                         {new Date(sub.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                     <div className="bg-white/60 p-4 rounded-2xl border border-white/50 backdrop-blur-sm">
                       <div className="flex justify-between items-center mb-2">
-                        <h5 className="font-black text-slate-900 text-[11px] uppercase tracking-tight">{sub.taskTitle}</h5>
-                        <p className="text-[10px] font-black text-emerald-600">৳{sub.rate}/{getUnitLabel(sub.rateType)}</p>
+                        <h5 className="font-semibold text-slate-900 text-[11px] uppercase tracking-tight">{sub.taskTitle}</h5>
+                        <p className="text-[10px] font-semibold text-emerald-600">৳{sub.rate}/{getUnitLabel(sub.rateType)}</p>
                       </div>
-                      <p className="text-slate-700 font-bold text-[11px] leading-relaxed break-words bg-slate-50/50 p-2 rounded-xl">{sub.details}</p>
+                      <p className="text-slate-700 font-medium text-[11px] leading-relaxed break-words bg-slate-50/50 p-2 rounded-xl">{sub.details}</p>
                       {sub.screenshot && (
-                        <button onClick={() => setViewingScreenshot(sub.screenshot || null)} className="mt-3 flex items-center gap-2 text-blue-600 font-black text-[9px] uppercase tracking-widest bg-blue-50 px-3 py-2 rounded-xl border border-blue-100 active:scale-95 transition-all w-full justify-center">
+                        <button onClick={() => setViewingScreenshot(sub.screenshot || null)} className="mt-3 flex items-center gap-2 text-blue-600 font-semibold text-[9px] uppercase tracking-widest bg-blue-50 px-3 py-2 rounded-xl border border-blue-100 active:scale-95 transition-all w-full justify-center">
                           <ImageIcon size={14} /> View Proof Screenshot
                         </button>
                       )}
@@ -354,27 +354,27 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                     <div className="flex items-center gap-3">
                       <div className="flex-1 bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
                         <div>
-                          <p className="text-[8px] font-black text-slate-400 uppercase mb-0.5 tracking-widest">Qty Control</p>
+                          <p className="text-[8px] font-medium text-slate-400 uppercase mb-0.5 tracking-widest">Qty Control</p>
                           <input 
                             type="number"
                             value={currentQuantity}
                             onChange={(e) => handleQuantityChange(sub.id, e.target.value)}
-                            className="w-full bg-transparent text-sm font-black text-slate-900 focus:outline-none"
+                            className="w-full bg-transparent text-sm font-semibold text-slate-900 focus:outline-none"
                           />
                         </div>
                         <div className="text-right border-l border-slate-100 pl-4">
-                          <p className="text-[8px] font-black text-slate-400 uppercase mb-0.5 tracking-widest">Final Value</p>
-                          <p className={`text-[13px] font-black ${tabType === 'RECEIVED' ? 'text-blue-700' : 'text-emerald-700'}`}>৳{currentTotal.toLocaleString()}</p>
+                          <p className="text-[8px] font-medium text-slate-400 uppercase mb-0.5 tracking-widest">Final Value</p>
+                          <p className={`text-[13px] font-semibold ${tabType === 'RECEIVED' ? 'text-blue-700' : 'text-emerald-700'}`}>৳{currentTotal.toLocaleString()}</p>
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => onAction(sub.id, TaskStatus.REJECTED)} className="w-12 h-12 bg-white text-rose-500 rounded-2xl border border-rose-100 flex items-center justify-center shadow-sm active:scale-90 transition-all"><X size={20} /></button>
                         {tabType === 'LEADS' ? (
-                          <button onClick={() => onAction(sub.id, TaskStatus.RECEIVED, currentQuantity)} className="px-4 h-12 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-100 flex items-center gap-2 active:scale-90 transition-all font-black uppercase text-[10px] tracking-widest">
+                          <button onClick={() => onAction(sub.id, TaskStatus.RECEIVED, currentQuantity)} className="px-4 h-12 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-100 flex items-center gap-2 active:scale-90 transition-all font-semibold uppercase text-[10px] tracking-widest">
                             <Check size={16} /> Receive
                           </button>
                         ) : (
-                          <button onClick={() => onAction(sub.id, TaskStatus.APPROVED, currentQuantity)} className="px-4 h-12 bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-100 flex items-center gap-2 active:scale-90 transition-all font-black uppercase text-[10px] tracking-widest">
+                          <button onClick={() => onAction(sub.id, TaskStatus.APPROVED, currentQuantity)} className="px-4 h-12 bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-100 flex items-center gap-2 active:scale-90 transition-all font-semibold uppercase text-[10px] tracking-widest">
                             <Check size={16} /> Approve
                           </button>
                         )}
@@ -399,18 +399,21 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
             <X size={32} />
           </button>
           <img src={viewingScreenshot} alt="Submission Screenshot" className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl" />
-          <p className="text-white/60 text-xs font-black uppercase mt-4 tracking-widest">User Submission Proof</p>
+          <p className="text-white/60 text-xs font-semibold uppercase mt-4 tracking-widest">User Submission Proof</p>
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 mb-6">
+        <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+          <ArrowLeft size={24} className="text-slate-800" />
+        </button>
+        <div className="flex items-center gap-3 flex-1">
           <div className="bg-emerald-600 p-2.5 rounded-2xl text-white shadow-xl shadow-emerald-100">
             <ShieldAlert size={20} />
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight leading-none">Admin Panel</h2>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Management Hub</p>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-none">Admin Panel</h2>
+            <p className="text-[9px] font-medium text-slate-400 uppercase tracking-widest mt-1">Management Hub</p>
           </div>
         </div>
         
@@ -426,7 +429,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
             className="bg-slate-900 text-white p-3 rounded-2xl shadow-xl flex items-center gap-2 active:scale-95 transition-all"
           >
             <Plus size={18} />
-            <span className="text-[10px] font-black uppercase tracking-widest">New Task</span>
+            <span className="text-[10px] font-semibold uppercase tracking-widest">New Task</span>
           </button>
         </div>
       </div>
@@ -434,43 +437,43 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
       <div className="flex bg-slate-100 p-1 rounded-[22px] mb-6 overflow-x-auto no-scrollbar gap-1">
         <button 
           onClick={() => { setActiveTab('OVERVIEW'); setShowTaskForm(false); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-black text-[8px] uppercase tracking-widest transition-all ${activeTab === 'OVERVIEW' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'OVERVIEW' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
         >
           Overview
         </button>
         <button 
           onClick={() => { setActiveTab('LEADS'); setShowTaskForm(false); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-black text-[8px] uppercase tracking-widest transition-all ${activeTab === 'LEADS' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'LEADS' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
         >
           Queue
         </button>
         <button 
           onClick={() => { setActiveTab('RECEIVED'); setShowTaskForm(false); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-black text-[8px] uppercase tracking-widest transition-all ${activeTab === 'RECEIVED' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'RECEIVED' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
         >
           Received
         </button>
         <button 
           onClick={() => { setActiveTab('WITHDRAWALS'); setShowTaskForm(false); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-black text-[8px] uppercase tracking-widest transition-all ${activeTab === 'WITHDRAWALS' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'WITHDRAWALS' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
         >
           Payouts
         </button>
         <button 
           onClick={() => { setActiveTab('TASKS'); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-black text-[8px] uppercase tracking-widest transition-all ${activeTab === 'TASKS' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'TASKS' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
         >
           Inventory
         </button>
         <button 
           onClick={() => { setActiveTab('TUTORIAL_MANAGE'); setShowTaskForm(false); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-black text-[8px] uppercase tracking-widest transition-all ${activeTab === 'TUTORIAL_MANAGE' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'TUTORIAL_MANAGE' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
         >
           Global Hub
         </button>
         <button 
           onClick={() => { setActiveTab('FINANCE'); setShowTaskForm(false); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-black text-[8px] uppercase tracking-widest transition-all ${activeTab === 'FINANCE' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'FINANCE' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
         >
           Finance
         </button>
@@ -486,14 +489,14 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                  <Shield size={24} />
                </div>
                <div>
-                 <h3 className="text-lg font-black tracking-tight leading-none text-white">Security Console</h3>
-                 <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mt-1">Update Master Credentials</p>
+                 <h3 className="text-lg font-semibold tracking-tight leading-none text-white">Security Console</h3>
+                 <p className="text-[10px] font-medium text-white/30 uppercase tracking-widest mt-1">Update Master Credentials</p>
                </div>
              </div>
 
              <form onSubmit={handleSaveSecurity} className="space-y-6 relative z-10">
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-1">New Administrator Username</label>
+                  <label className="text-[9px] font-medium text-white/40 uppercase tracking-widest ml-1">New Administrator Username</label>
                   <div className="relative group">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-indigo-400 transition-colors">
                       <User size={18} />
@@ -502,7 +505,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                       type="text"
                       value={newAdminUser}
                       onChange={(e) => setNewAdminUser(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 p-5 pl-12 rounded-3xl text-white font-bold focus:outline-none focus:border-indigo-500 transition-all placeholder:text-white/10"
+                      className="w-full bg-white/5 border border-white/10 p-5 pl-12 rounded-3xl text-white font-semibold focus:outline-none focus:border-indigo-500 transition-all placeholder:text-white/10"
                       placeholder="Username"
                       required
                     />
@@ -510,7 +513,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-1">New Administrative Password</label>
+                  <label className="text-[9px] font-medium text-white/40 uppercase tracking-widest ml-1">New Administrative Password</label>
                   <div className="relative group">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-indigo-400 transition-colors">
                       <Lock size={18} />
@@ -519,7 +522,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                       type={showPass ? 'text' : 'password'}
                       value={newAdminPass}
                       onChange={(e) => setNewAdminPass(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 p-5 pl-12 pr-12 rounded-3xl text-white font-bold focus:outline-none focus:border-indigo-500 transition-all placeholder:text-white/10"
+                      className="w-full bg-white/5 border border-white/10 p-5 pl-12 pr-12 rounded-3xl text-white font-semibold focus:outline-none focus:border-indigo-500 transition-all placeholder:text-white/10"
                       placeholder="••••••••"
                       required
                     />
@@ -536,7 +539,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                 <button 
                   type="submit"
                   disabled={isSavingSecurity}
-                  className="w-full bg-indigo-600 py-6 rounded-3xl text-white font-black text-[11px] uppercase tracking-[3px] shadow-[0_0_30px_rgba(79,70,229,0.3)] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  className="w-full bg-indigo-600 py-6 rounded-3xl text-white font-semibold text-[11px] uppercase tracking-[3px] shadow-[0_0_30px_rgba(79,70,229,0.3)] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                 >
                   {isSavingSecurity ? (
                     <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -559,23 +562,23 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                 <Landmark size={24} />
               </div>
               <div>
-                <h3 className="text-lg font-black tracking-tight leading-none">Financial Control</h3>
-                <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mt-1">Withdrawal Limits & Gateways</p>
+                <h3 className="text-lg font-semibold tracking-tight leading-none">Financial Control</h3>
+                <p className="text-[10px] font-medium text-white/30 uppercase tracking-widest mt-1">Withdrawal Limits & Gateways</p>
               </div>
             </div>
 
             <div className="space-y-8 relative z-10">
               {/* Min Withdrawal Config */}
               <div className="bg-white/5 border border-white/10 rounded-[32px] p-6">
-                <label className="block text-[9px] font-black text-white/40 uppercase tracking-[2px] mb-3 ml-1">Minimum Payout Limit (৳)</label>
+                <label className="block text-[9px] font-medium text-white/40 uppercase tracking-[2px] mb-3 ml-1">Minimum Payout Limit (৳)</label>
                 <div className="flex items-center gap-4">
                   <div className="flex-1 relative group">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-black text-lg">৳</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold text-lg">৳</span>
                     <input 
                       type="number"
                       value={editAppConfig.minWithdrawal}
                       onChange={(e) => setEditAppConfig({...editAppConfig, minWithdrawal: parseInt(e.target.value) || 0})}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-xl font-black focus:outline-none focus:border-emerald-500 transition-all"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-xl font-bold focus:outline-none focus:border-emerald-500 transition-all"
                     />
                   </div>
                 </div>
@@ -584,12 +587,12 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
               {/* Methods List */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center px-1">
-                  <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
+                  <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-widest flex items-center gap-2">
                     <CreditCard size={14} /> Active Gateways
                   </h4>
                   <button 
                     onClick={() => setShowMethodForm(true)}
-                    className="text-[9px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1 hover:underline"
+                    className="text-[9px] font-semibold text-emerald-400 uppercase tracking-widest flex items-center gap-1 hover:underline"
                   >
                     <Plus size={12} /> Add Method
                   </button>
@@ -598,7 +601,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                 {showMethodForm && (
                   <div className="bg-white/10 border border-white/10 rounded-3xl p-6 space-y-4 animate-in slide-in-from-top-4 duration-300">
                     <div className="flex justify-between items-center">
-                      <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">New Method Setup</span>
+                      <span className="text-[9px] font-medium text-emerald-400 uppercase tracking-widest">New Method Setup</span>
                       <button onClick={() => setShowMethodForm(false)} className="text-white/40"><X size={16} /></button>
                     </div>
                     <div className="space-y-3">
@@ -606,11 +609,11 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                         type="text" 
                         value={newMethod.name}
                         onChange={(e) => setNewMethod({...newMethod, name: e.target.value})}
-                        className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm font-bold focus:outline-none" 
+                        className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm font-semibold focus:outline-none" 
                         placeholder="Method Name (e.g. PayPal)" 
                       />
                       <div className="flex items-center gap-3">
-                        <div onClick={() => fileInputRef.current?.click()} className="flex-1 bg-black/20 border border-dashed border-white/20 rounded-xl h-24 flex flex-col items-center justify-center text-[10px] font-black uppercase cursor-pointer hover:bg-black/40">
+                        <div onClick={() => fileInputRef.current?.click()} className="flex-1 bg-black/20 border border-dashed border-white/20 rounded-xl h-24 flex flex-col items-center justify-center text-[10px] font-medium uppercase cursor-pointer hover:bg-black/40">
                           {newMethod.icon ? (
                             <img src={newMethod.icon} alt="Preview" className="h-12 object-contain" />
                           ) : (
@@ -624,7 +627,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                       </div>
                       <button 
                         onClick={handleAddMethod}
-                        className="w-full bg-emerald-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg"
+                        className="w-full bg-emerald-600 py-3 rounded-xl font-semibold text-[10px] uppercase tracking-widest shadow-lg"
                       >
                         Add Gateway
                       </button>
@@ -640,8 +643,8 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                           <img src={method.icon} alt={method.name} className="h-full object-contain" />
                         </div>
                         <div>
-                          <p className="text-[13px] font-black tracking-tight">{method.name}</p>
-                          <p className="text-[8px] font-black text-white/30 uppercase tracking-widest">Active System ID: {method.id}</p>
+                          <p className="text-[13px] font-semibold tracking-tight">{method.name}</p>
+                          <p className="text-[8px] font-medium text-white/30 uppercase tracking-widest">Active System ID: {method.id}</p>
                         </div>
                       </div>
                       <button 
@@ -657,7 +660,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
 
               <button 
                 onClick={handleSaveFinanceConfig}
-                className="w-full bg-emerald-600 py-6 rounded-[32px] text-white font-black text-[11px] uppercase tracking-[3px] shadow-2xl shadow-emerald-900/40 active:scale-95 transition-all mt-4"
+                className="w-full bg-emerald-600 py-6 rounded-[32px] text-white font-semibold text-[11px] uppercase tracking-[3px] shadow-2xl shadow-emerald-900/40 active:scale-95 transition-all mt-4"
               >
                 Sync Financial Hub <Save size={18} className="inline ml-1" />
               </button>
@@ -672,8 +675,8 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
             <div className="bg-slate-900 p-5 rounded-[32px] border border-white/5 shadow-xl relative overflow-hidden">
                <div className="relative z-10">
                  <Users className="text-emerald-500 mb-2" size={20} />
-                 <h3 className="text-2xl font-black text-white tracking-tight">{analytics.totalSignups.toLocaleString()}</h3>
-                 <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Total Registered Users</p>
+                 <h3 className="text-2xl font-bold text-white tracking-tight">{analytics.totalSignups.toLocaleString()}</h3>
+                 <p className="text-[8px] font-medium text-white/40 uppercase tracking-widest">Total Registered Users</p>
                </div>
                <BarChart3 className="absolute -bottom-4 -right-4 text-white/5" size={80} />
             </div>
@@ -681,8 +684,8 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
             <div className="bg-slate-900 p-5 rounded-[32px] border border-white/5 shadow-xl relative overflow-hidden">
                <div className="relative z-10">
                  <Activity className="text-blue-500 mb-2" size={20} />
-                 <h3 className="text-2xl font-black text-white tracking-tight">{analytics.activeLast72h.toLocaleString()}</h3>
-                 <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Active Users (72h)</p>
+                 <h3 className="text-2xl font-bold text-white tracking-tight">{analytics.activeLast72h.toLocaleString()}</h3>
+                 <p className="text-[8px] font-medium text-white/40 uppercase tracking-widest">Active Users (72h)</p>
                </div>
                <Zap className="absolute -bottom-4 -right-4 text-white/5" size={80} />
             </div>
@@ -692,18 +695,18 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
-                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[2px]">Real-time Pulse</span>
+                <span className="text-[9px] font-semibold text-emerald-500 uppercase tracking-[2px]">Real-time Pulse</span>
               </div>
               <div className="bg-emerald-500/10 px-3 py-1 rounded-full">
-                 <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Live Now</span>
+                 <span className="text-[8px] font-semibold text-emerald-400 uppercase tracking-widest">Live Now</span>
               </div>
             </div>
             
             <div className="flex items-baseline gap-2 mb-1">
-              <h2 className="text-5xl font-black text-white tracking-tighter">{analytics.currentlyOnline.toLocaleString()}</h2>
-              <span className="text-emerald-500 font-black text-xs uppercase">Users Online</span>
+              <h2 className="text-5xl font-bold text-white tracking-tighter">{analytics.currentlyOnline.toLocaleString()}</h2>
+              <span className="text-emerald-500 font-semibold text-xs uppercase">Users Online</span>
             </div>
-            <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Global sessions currently active</p>
+            <p className="text-[10px] text-white/30 font-medium uppercase tracking-widest">Global sessions currently active</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -711,16 +714,16 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
               <div className="bg-blue-50 w-10 h-10 rounded-xl flex items-center justify-center text-blue-600">
                 <PlaySquare size={20} />
               </div>
-              <h4 className="text-xl font-black text-slate-900 tracking-tight">{analytics.tutorialViewsLast72h.toLocaleString()}</h4>
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Tutorial Views (72h)</p>
+              <h4 className="text-xl font-bold text-slate-900 tracking-tight">{analytics.tutorialViewsLast72h.toLocaleString()}</h4>
+              <p className="text-[8px] font-medium text-slate-400 uppercase tracking-widest">Tutorial Views (72h)</p>
             </div>
 
             <div className="bg-white p-5 rounded-[32px] custom-shadow border border-slate-50 flex flex-col gap-2">
               <div className="bg-rose-50 w-10 h-10 rounded-xl flex items-center justify-center text-rose-600">
                 <UserMinus size={20} />
               </div>
-              <h4 className="text-xl font-black text-slate-900 tracking-tight">{analytics.uninstalls.toLocaleString()}</h4>
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Uninstalled Count</p>
+              <h4 className="text-xl font-bold text-slate-900 tracking-tight">{analytics.uninstalls.toLocaleString()}</h4>
+              <p className="text-[8px] font-medium text-slate-400 uppercase tracking-widest">Uninstalled Count</p>
             </div>
           </div>
         </div>
@@ -730,7 +733,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
         pendingLeads.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-[40px] border-2 border-dashed border-slate-100">
             <CheckCircle2 className="text-slate-200 mx-auto mb-4" size={48} />
-            <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">All submissions reviewed</p>
+            <p className="text-slate-400 font-medium uppercase tracking-widest text-[10px]">All submissions reviewed</p>
           </div>
         ) : (
           <SubmissionList groupedItems={groupedPending} tabType="LEADS" />
@@ -741,14 +744,14 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
         receivedLeads.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-[40px] border-2 border-dashed border-slate-100">
             <HistoryIcon className="text-slate-200 mx-auto mb-4" size={48} />
-            <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No received history</p>
+            <p className="text-slate-400 font-medium uppercase tracking-widest text-[10px]">No received history</p>
           </div>
         ) : (
           <div className="space-y-6">
              <div className="bg-slate-900 text-white p-6 rounded-[32px] mb-4 shadow-xl">
-               <p className="text-[9px] font-black uppercase tracking-widest opacity-60 mb-1">Received Status Hub</p>
-               <h3 className="text-3xl font-black tracking-tight">৳{waitingPayoutValue.toLocaleString()}</h3>
-               <p className="text-[8px] font-bold text-white/40 uppercase tracking-widest mt-1">Value waiting for payout</p>
+               <p className="text-[9px] font-medium uppercase tracking-widest opacity-60 mb-1">Received Status Hub</p>
+               <h3 className="text-3xl font-bold tracking-tight">৳{waitingPayoutValue.toLocaleString()}</h3>
+               <p className="text-[8px] font-medium text-white/40 uppercase tracking-widest mt-1">Value waiting for payout</p>
              </div>
              <SubmissionList groupedItems={groupedReceived} tabType="RECEIVED" />
           </div>
@@ -764,7 +767,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                   <div className={`p-2 rounded-xl bg-white/10 ${editingTask ? 'text-indigo-400' : 'text-emerald-400'}`}>
                     {editingTask ? <Edit3 size={18} /> : <Plus size={18} />}
                   </div>
-                  <h3 className="text-sm font-black uppercase tracking-widest">
+                  <h3 className="text-sm font-semibold uppercase tracking-widest">
                     {editingTask ? 'Edit Task Listing' : 'Setup New Daily Task'}
                   </h3>
                 </div>
@@ -772,20 +775,20 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
               </div>
               <form onSubmit={handleSubmitForm} className="space-y-5">
                 <div>
-                  <label className="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Task Title</label>
-                  <input type="text" value={formTask.title} onChange={(e) => setFormTask({...formTask, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-[13px] font-bold focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10" placeholder="e.g. Instagram Account Verification" required />
+                  <label className="block text-[9px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Task Title</label>
+                  <input type="text" value={formTask.title} onChange={(e) => setFormTask({...formTask, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-[13px] font-semibold focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10" placeholder="e.g. Instagram Account Verification" required />
                 </div>
                 
                 <div>
-                  <label className="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Tutorial Video Link (YouTube)</label>
+                  <label className="block text-[9px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Tutorial Video Link (YouTube)</label>
                   <div className="relative">
-                    <input type="text" value={formTask.tutorialUrl} onChange={(e) => setFormTask({...formTask, tutorialUrl: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-12 text-[13px] font-bold focus:outline-none focus:border-white/30 transition-all placeholder:text-white/20" placeholder="https://youtube.com/watch?v=..." />
+                    <input type="text" value={formTask.tutorialUrl} onChange={(e) => setFormTask({...formTask, tutorialUrl: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-12 text-[13px] font-semibold focus:outline-none focus:border-white/30 transition-all placeholder:text-white/20" placeholder="https://youtube.com/watch?v=..." />
                     <PlayCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                   </div>
                 </div>
 
                 <div className="flex flex-col items-center gap-4 py-2">
-                  <label className="w-full text-[9px] font-black text-white/40 uppercase tracking-widest mb-1 ml-1">Icon / Illustration</label>
+                  <label className="w-full text-[9px] font-medium text-white/40 uppercase tracking-widest mb-1 ml-1">Icon / Illustration</label>
                   <div onClick={() => fileInputRef.current?.click()} className="w-full h-32 bg-white/5 border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center text-white/40 cursor-pointer hover:bg-white/10 hover:border-white/30 transition-all overflow-hidden" >
                     {formTask.icon.startsWith('data:image') || formTask.icon.startsWith('http') ? (
                       <div className="relative w-full h-full group">
@@ -797,7 +800,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                     ) : (
                       <>
                         <div className="p-3 bg-white/5 rounded-2xl mb-2"><Upload size={24} className="text-white/40" /></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest">Upload Custom Icon</span>
+                        <span className="text-[10px] font-medium uppercase tracking-widest">Upload Custom Icon</span>
                       </>
                     )}
                   </div>
@@ -805,22 +808,22 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Reward Rate (৳)</label>
-                    <input type="number" value={formTask.rate} onChange={(e) => setFormTask({...formTask, rate: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm font-black focus:outline-none" required />
+                    <label className="block text-[9px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Reward Rate (৳)</label>
+                    <input type="number" value={formTask.rate} onChange={(e) => setFormTask({...formTask, rate: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm font-bold focus:outline-none" required />
                   </div>
                   <div>
-                    <label className="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Reward Unit</label>
+                    <label className="block text-[9px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Reward Unit</label>
                     <input 
                       type="text" 
                       value={formTask.rateType} 
                       onChange={(e) => setFormTask({...formTask, rateType: e.target.value})} 
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-[13px] font-bold focus:outline-none focus:border-white/30 transition-all placeholder:text-white/40 text-white" 
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-[13px] font-semibold focus:outline-none focus:border-white/30 transition-all placeholder:text-white/40 text-white" 
                       placeholder="e.g. ID, 1K, STAR" 
                       required 
                     />
                   </div>
                 </div>
-                <button type="submit" className={`w-full py-5 rounded-2xl font-black text-[11px] uppercase tracking-[2px] transition-all shadow-2xl active:scale-[0.98] ${editingTask ? 'bg-indigo-600 shadow-indigo-500/20' : 'bg-emerald-600 shadow-emerald-500/20'}`}>
+                <button type="submit" className={`w-full py-5 rounded-2xl font-semibold text-[11px] uppercase tracking-[2px] transition-all shadow-2xl active:scale-[0.98] ${editingTask ? 'bg-indigo-600 shadow-indigo-500/20' : 'bg-emerald-600 shadow-emerald-500/20'}`}>
                   {editingTask ? 'Confirm Task Updates' : 'Publish Daily Task'}
                 </button>
               </form>
@@ -829,11 +832,11 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
           {!showTaskForm && (
             <button onClick={() => setShowTaskForm(true)} className="w-full py-12 border-2 border-dashed border-slate-200 rounded-[40px] flex flex-col items-center justify-center gap-3 text-slate-400 hover:border-emerald-500 hover:text-emerald-600 transition-all bg-white shadow-sm" >
               <div className="bg-slate-50 p-4 rounded-3xl"><Plus size={32} /></div>
-              <span className="text-[11px] font-black uppercase tracking-[3px]">Create New Task Listing</span>
+              <span className="text-[11px] font-semibold uppercase tracking-[3px]">Create New Task Listing</span>
             </button>
           )}
           <div className="space-y-4">
-            <h3 className="text-[10px] font-black text-slate-800 flex items-center gap-2 uppercase tracking-widest px-2"><LayoutList size={14} className="text-slate-400" /> Active Inventory ({tasks.length})</h3>
+            <h3 className="text-[10px] font-semibold text-slate-800 flex items-center gap-2 uppercase tracking-widest px-2"><LayoutList size={14} className="text-slate-400" /> Active Inventory ({tasks.length})</h3>
             <div className="grid grid-cols-1 gap-3">
               {tasks.map((task) => (
                 <div key={task.id} className="bg-white p-4 rounded-[30px] flex items-center gap-4 custom-shadow border border-slate-50 group transition-all">
@@ -842,10 +845,10 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                     {renderIcon(task.icon)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-black text-slate-900 text-[13px] truncate tracking-tight leading-none">{task.title}</h4>
+                    <h4 className="font-semibold text-slate-900 text-[13px] truncate tracking-tight leading-none">{task.title}</h4>
                     <div className="flex items-center gap-2 mt-2">
-                       <span className="bg-emerald-50 text-emerald-600 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-tighter">৳{task.rate}/{getUnitLabel(task.rateType)}</span>
-                       {task.tutorialUrl && <span className="bg-blue-50 text-blue-600 font-black text-[7px] px-1.5 py-0.5 rounded-full uppercase tracking-tighter flex items-center gap-1"><PlayCircle size={8}/> Video</span>}
+                       <span className="bg-emerald-50 text-emerald-600 font-bold text-[9px] px-2 py-0.5 rounded-full uppercase tracking-tighter">৳{task.rate}/{getUnitLabel(task.rateType)}</span>
+                       {task.tutorialUrl && <span className="bg-blue-50 text-blue-600 font-semibold text-[7px] px-1.5 py-0.5 rounded-full uppercase tracking-tighter flex items-center gap-1"><PlayCircle size={8}/> Video</span>}
                     </div>
                   </div>
                   <div className="flex gap-1">
@@ -867,8 +870,8 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                 <Video size={24} />
               </div>
               <div>
-                <h3 className="text-lg font-black tracking-tight leading-none">Global Learner Hub</h3>
-                <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mt-1">Configure Onboarding & Support</p>
+                <h3 className="text-lg font-semibold tracking-tight leading-none">Global Learner Hub</h3>
+                <p className="text-[10px] font-medium text-white/30 uppercase tracking-widest mt-1">Configure Onboarding & Support</p>
               </div>
             </div>
 
@@ -879,11 +882,11 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                    <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white">
                       <Layout size={16} />
                    </div>
-                   <h4 className="text-[11px] font-black uppercase tracking-widest">Inventory Control</h4>
+                   <h4 className="text-[11px] font-semibold uppercase tracking-widest">Inventory Control</h4>
                 </div>
                 <button 
                   onClick={() => { setActiveTab('TASKS'); setShowTaskForm(true); }}
-                  className="w-full bg-white text-slate-900 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all active:scale-95"
+                  className="w-full bg-white text-slate-900 py-4 rounded-2xl font-semibold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all active:scale-95"
                 >
                   <PlusCircle size={16} /> Add New Task to Inventory
                 </button>
@@ -895,31 +898,31 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                    <div className="w-8 h-8 bg-emerald-600 rounded-xl flex items-center justify-center text-white">
                       <MessageSquare size={16} />
                    </div>
-                   <h4 className="text-[11px] font-black uppercase tracking-widest">Support Settings</h4>
+                   <h4 className="text-[11px] font-semibold uppercase tracking-widest">Support Settings</h4>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Support Telegram Username</label>
+                    <label className="block text-[9px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Support Telegram Username</label>
                     <div className="relative">
                       <input 
                         type="text" 
                         value={editTutorial.supportTelegram} 
                         onChange={(e) => setEditTutorial({...editTutorial, supportTelegram: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-[13px] font-bold focus:outline-none focus:border-emerald-500 transition-all text-white" 
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-[13px] font-semibold focus:outline-none focus:border-emerald-500 transition-all text-white" 
                         placeholder="TelegramUsername" 
                       />
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 font-black">@</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 font-bold">@</span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Official Telegram Channel</label>
+                    <label className="block text-[9px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Official Telegram Channel</label>
                     <div className="relative">
                       <input 
                         type="text" 
                         value={editTutorial.telegramChannel} 
                         onChange={(e) => setEditTutorial({...editTutorial, telegramChannel: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-[13px] font-bold focus:outline-none focus:border-amber-500 transition-all text-white" 
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-[13px] font-semibold focus:outline-none focus:border-amber-500 transition-all text-white" 
                         placeholder="ChannelUsername" 
                       />
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20">
@@ -931,24 +934,24 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Main Landing Video (YouTube URL)</label>
+                <label className="block text-[10px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Main Landing Video (YouTube URL)</label>
                 <input 
                   type="text" 
                   value={editTutorial.heroVideoUrl} 
                   onChange={(e) => setEditTutorial({...editTutorial, heroVideoUrl: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-[13px] font-bold focus:outline-none focus:border-white/30 transition-all text-white" 
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-[13px] font-semibold focus:outline-none focus:border-white/30 transition-all text-white" 
                   placeholder="https://..." 
                 />
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-4 px-1">
-                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
+                  <label className="block text-[10px] font-medium text-white/40 uppercase tracking-widest flex items-center gap-2">
                     <ListOrdered size={14} /> Roadmap Steps ({editTutorial.steps.length})
                   </label>
                   <button 
                     onClick={handleAddRoadmapStep}
-                    className="text-[9px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1 hover:underline"
+                    className="text-[9px] font-semibold text-emerald-400 uppercase tracking-widest flex items-center gap-1 hover:underline"
                   >
                     <PlusCircle size={12} /> Add Step
                   </button>
@@ -965,16 +968,16 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                       </button>
 
                       <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                        <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Step 0{idx + 1} Editor</span>
+                        <span className="text-[9px] font-medium text-emerald-400 uppercase tracking-widest">Step 0{idx + 1} Editor</span>
                       </div>
                       
                       <div className="space-y-3">
-                        <label className="block text-[8px] font-black text-white/20 uppercase tracking-widest">Title & Description</label>
+                        <label className="block text-[8px] font-medium text-white/20 uppercase tracking-widest">Title & Description</label>
                         <input 
                           type="text" 
                           value={step.title} 
                           onChange={(e) => handleTutorialUpdateStep(idx, 'title', e.target.value)}
-                          className="w-full bg-transparent border-b border-white/10 py-1 text-sm font-black focus:outline-none focus:border-emerald-500 transition-all" 
+                          className="w-full bg-transparent border-b border-white/10 py-1 text-sm font-semibold focus:outline-none focus:border-emerald-500 transition-all" 
                           placeholder="Step Title" 
                         />
                         <textarea 
@@ -987,22 +990,22 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
 
                       <div className="grid grid-cols-2 gap-3 pt-2">
                         <div className="space-y-2">
-                          <label className="block text-[8px] font-black text-white/20 uppercase tracking-widest flex items-center gap-1"><Edit3 size={8}/> Button Label</label>
+                          <label className="block text-[8px] font-medium text-white/20 uppercase tracking-widest flex items-center gap-1"><Edit3 size={8}/> Button Label</label>
                           <input 
                             type="text" 
                             value={step.buttonText || ''} 
                             onChange={(e) => handleTutorialUpdateStep(idx, 'buttonText', e.target.value)}
-                            className="w-full bg-white/5 rounded-xl px-3 py-2 text-[10px] font-black focus:outline-none focus:bg-white/10" 
+                            className="w-full bg-white/5 rounded-xl px-3 py-2 text-[10px] font-semibold focus:outline-none focus:bg-white/10" 
                             placeholder="e.g. Watch Video" 
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-[8px] font-black text-white/20 uppercase tracking-widest flex items-center gap-1"><Link size={8}/> Action Link</label>
+                          <label className="block text-[8px] font-medium text-white/20 uppercase tracking-widest flex items-center gap-1"><Link size={8}/> Action Link</label>
                           <input 
                             type="text" 
                             value={step.buttonUrl || ''} 
                             onChange={(e) => handleTutorialUpdateStep(idx, 'buttonUrl', e.target.value)}
-                            className="w-full bg-white/5 rounded-xl px-3 py-2 text-[10px] font-black focus:outline-none focus:bg-white/10" 
+                            className="w-full bg-white/5 rounded-xl px-3 py-2 text-[10px] font-semibold focus:outline-none focus:bg-white/10" 
                             placeholder="https://..." 
                           />
                         </div>
@@ -1014,7 +1017,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
 
               <button 
                 onClick={handleSaveTutorialConfig}
-                className="w-full bg-emerald-600 py-6 rounded-[32px] text-white font-black text-[11px] uppercase tracking-[3px] shadow-2xl shadow-emerald-900/40 active:scale-95 transition-all mt-4"
+                className="w-full bg-emerald-600 py-6 rounded-[32px] text-white font-semibold text-[11px] uppercase tracking-[3px] shadow-2xl shadow-emerald-900/40 active:scale-95 transition-all mt-4"
               >
                 Save All Config
               </button>
@@ -1027,7 +1030,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
         withdrawals.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-[40px] border-2 border-dashed border-slate-100">
             <Wallet className="text-slate-200 mx-auto mb-4" size={48} />
-            <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No payout requests found</p>
+            <p className="text-slate-400 font-medium uppercase tracking-widest text-[10px]">No payout requests found</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -1039,22 +1042,22 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
                       <CreditCard size={22} />
                     </div>
                     <div>
-                      <h4 className="font-black text-[13px] text-slate-900 leading-none tracking-tight">Withdrawal Hub</h4>
-                      <p className="text-[10px] font-black text-emerald-600 uppercase mt-1.5 tracking-widest">{wd.method}</p>
+                      <h4 className="font-semibold text-[13px] text-slate-900 leading-none tracking-tight">Withdrawal Hub</h4>
+                      <p className="text-[10px] font-semibold text-emerald-600 uppercase mt-1.5 tracking-widest">{wd.method}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <h3 className="text-xl font-black text-slate-900">৳{wd.amount}</h3>
-                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Request Amount</p>
+                    <h3 className="text-xl font-bold text-slate-900">৳{wd.amount}</h3>
+                    <p className="text-[8px] font-medium text-slate-400 uppercase tracking-widest">Request Amount</p>
                   </div>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1.5 tracking-widest flex items-center gap-1.5"><Info size={12} /> Account Verification Info</p>
-                  <p className="text-[11px] font-black text-slate-800 break-all">{wd.details?.replace('Account: ', '')}</p>
+                  <p className="text-[9px] font-medium text-slate-400 uppercase mb-1.5 tracking-widest flex items-center gap-1.5"><Info size={12} /> Account Verification Info</p>
+                  <p className="text-[11px] font-semibold text-slate-800 break-all">{wd.details?.replace('Account: ', '')}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => onWithdrawAction(wd.id, TaskStatus.REJECTED)} className="bg-white text-rose-500 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-rose-50 active:scale-95 transition-all">Reject Payout</button>
-                  <button onClick={() => onWithdrawAction(wd.id, TaskStatus.APPROVED)} className="bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">Confirm Payout</button>
+                  <button onClick={() => onWithdrawAction(wd.id, TaskStatus.REJECTED)} className="bg-white text-rose-500 py-4 rounded-2xl font-semibold text-[10px] uppercase tracking-widest border border-rose-50 active:scale-95 transition-all">Reject Payout</button>
+                  <button onClick={() => onWithdrawAction(wd.id, TaskStatus.APPROVED)} className="bg-slate-900 text-white py-4 rounded-2xl font-semibold text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">Confirm Payout</button>
                 </div>
               </div>
             ))}
