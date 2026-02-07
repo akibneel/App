@@ -23,44 +23,44 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ profile, 
   };
 
   return (
-    <div className="min-h-full bg-slate-50 animate-in slide-in-from-right-10 duration-500">
-      <div className="bg-white p-6 flex items-center gap-4 sticky top-0 z-10 border-b border-slate-100">
-        <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-          <ArrowLeft size={24} className="text-slate-800" />
+    <div className="min-h-full bg-slate-50 dark:bg-slate-950 animate-in slide-in-from-right-10 duration-500 transition-colors">
+      <div className="bg-white dark:bg-slate-900 p-6 flex items-center gap-4 sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800 transition-colors">
+        <button onClick={onBack} className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-90 text-slate-800 dark:text-slate-100">
+          <ArrowLeft size={24} />
         </button>
-        <h2 className="text-xl font-semibold text-slate-800 tracking-tight">Account Settings</h2>
+        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Account Settings</h2>
       </div>
 
       <div className="p-6">
-        <div className="bg-white p-6 rounded-[32px] custom-shadow mb-8 border border-slate-50">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-xl font-semibold shadow-lg">
-              {formData.name.charAt(0)}
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[40px] shadow-sm dark:shadow-none mb-10 border border-slate-50 dark:border-slate-800 transition-colors">
+          <div className="flex items-center gap-5 mb-8">
+            <div className="w-20 h-20 bg-emerald-500 rounded-[30px] flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-emerald-500/20">
+              {formData.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800">{formData.name}</h3>
-              <p className="text-slate-400 text-xs font-medium uppercase tracking-widest">Official Member</p>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">{formData.name}</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[4px] mt-2">Certified Member</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-3 rounded-2xl border border-emerald-100 mb-2">
-            <ShieldCheck size={18} />
-            <span className="text-[10px] font-semibold uppercase tracking-widest">Account Status: Verified</span>
+          <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 px-5 py-4 rounded-3xl border border-emerald-100 dark:border-emerald-900/30 transition-colors">
+            <ShieldCheck size={20} />
+            <span className="text-[11px] font-black uppercase tracking-[3px]">Trust Level: High Verification</span>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-widest ml-1 mb-2">Full Legal Name</label>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                <User size={18} />
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="space-y-2">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[4px] ml-1.5">Official Display Name</label>
+            <div className="relative group">
+              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600 group-focus-within:text-emerald-600 transition-colors">
+                <User size={20} />
               </div>
               <input 
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="w-full bg-white p-4 pl-12 rounded-2xl border-2 border-slate-100 focus:border-emerald-500 focus:outline-none transition-all custom-shadow text-black font-semibold"
+                className="w-full bg-white dark:bg-slate-900 p-5 pl-14 rounded-3xl border-2 border-slate-100 dark:border-slate-800 focus:border-emerald-500 focus:outline-none transition-all text-slate-900 dark:text-white font-bold"
                 required
               />
             </div>
@@ -70,21 +70,21 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ profile, 
             <button 
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-emerald-600 py-6 rounded-[32px] text-white font-semibold text-[13px] shadow-2xl active:scale-[0.98] disabled:bg-slate-200 disabled:shadow-none transition-all flex items-center justify-center gap-3 uppercase tracking-[3px]"
+              className="w-full bg-slate-900 dark:bg-emerald-600 py-6 rounded-[35px] text-white font-black text-[14px] shadow-2xl dark:shadow-none active:scale-[0.98] disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:shadow-none transition-all flex items-center justify-center gap-3 uppercase tracking-[4px]"
             >
               {isSubmitting ? (
-                <span className="animate-pulse">Updating...</span>
+                <span className="animate-pulse">Processing...</span>
               ) : (
                 <>
-                  Save Changes <Save size={18} />
+                  Commit Changes <Save size={20} />
                 </>
               )}
             </button>
           </div>
         </form>
 
-        <div className="mt-8 text-center">
-          <p className="text-slate-400 text-[10px] font-medium uppercase tracking-widest">Secure Settings v2.0</p>
+        <div className="mt-12 text-center">
+          <p className="text-slate-300 dark:text-slate-700 text-[10px] font-black uppercase tracking-[5px]">Encrypted Settings Module</p>
         </div>
       </div>
       

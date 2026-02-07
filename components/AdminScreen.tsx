@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Submission, TaskStatus, Transaction, Task, TutorialConfig, TutorialStep, AppAnalytics, AdminCredentials, AppConfig, WithdrawalMethod } from '../types';
-import { ShieldAlert, Check, X, User, Edit3, Wallet, CreditCard, Plus, Trash2, LayoutList, CheckCircle2, Image as ImageIcon, Upload, Info, ExternalLink, ArrowLeft, History as HistoryIcon, BadgeCheck, DollarSign, PlayCircle, Video, ListOrdered, Link, PlusCircle, Layout, MessageSquare, Megaphone, BarChart3, Users, Zap, PlaySquare, UserMinus, Activity, Shield, Lock, Save, Eye, EyeOff, Landmark } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Submission, TaskStatus, Task, TutorialConfig, TutorialStep, AppAnalytics, AdminCredentials, AppConfig, WithdrawalMethod, Transaction } from '../types';
+import { ShieldAlert, Check, X, User, Edit3, Plus, Trash2, CheckCircle2, Image as ImageIcon, Upload, ArrowLeft, PlayCircle, Video, ListOrdered, Link, PlusCircle, Layout, MessageSquare, Megaphone, Users, Zap, PlaySquare, Lock, Save, FileText, Smartphone, DollarSign, Globe, ExternalLink, CreditCard, Landmark } from 'lucide-react';
 
 interface AdminScreenProps {
   analytics: AppAnalytics;
@@ -21,63 +21,26 @@ interface AdminScreenProps {
   onBack: () => void;
 }
 
-const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withdrawals, tasks, tutorialConfig, appConfig, adminCredentials, onUpdateAdminCredentials, onAction, onWithdrawAction, onAddTask, onUpdateTask, onDeleteTask, onUpdateTutorialConfig, onUpdateAppConfig, onBack }) => {
+const AdminScreen: React.FC<AdminScreenProps> = ({ 
+  analytics, submissions, withdrawals, tasks, tutorialConfig, appConfig, adminCredentials, 
+  onUpdateAdminCredentials, onAction, onWithdrawAction, onAddTask, onUpdateTask, 
+  onDeleteTask, onUpdateTutorialConfig, onUpdateAppConfig, onBack 
+}) => {
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'LEADS' | 'RECEIVED' | 'WITHDRAWALS' | 'TASKS' | 'TUTORIAL_MANAGE' | 'FINANCE' | 'SECURITY'>('OVERVIEW');
-  const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [viewingScreenshot, setViewingScreenshot] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const taskLogoInputRef = useRef<HTMLInputElement>(null);
   
+  // Local state for manual quantity/rate overrides in leads/received
+  const [manualAdjustments, setManualAdjustments] = useState<Record<string, { quantity: number; rate: number }>>({});
+
   // Security State
-  const [newAdminUser, setNewAdminUser] = useState(adminCredentials.username);
-  const [newAdminPass, setNewAdminPass] = useState(adminCredentials.password);
-  const [showPass, setShowPass] = useState(false);
-  const [isSavingSecurity, setIsSavingSecurity] = useState(false);
+  const [secUsername, setSecUsername] = useState(adminCredentials.username);
+  const [secPassword, setSecPassword] = useState(adminCredentials.password);
 
-  // Local Tutorial Edit State
-  const [editTutorial, setEditTutorial] = useState<TutorialConfig>(tutorialConfig);
-
-  // Local App Config State (Finance)
-  const [editAppConfig, setEditAppConfig] = useState<AppConfig>(appConfig);
-  const [showMethodForm, setShowMethodForm] = useState(false);
-  const [newMethod, setNewMethod] = useState<WithdrawalMethod>({
-    id: '',
-    name: '',
-    icon: '',
-    color: 'border-slate-200',
-    activeBg: 'bg-slate-50'
-  });
-
-  const boxColors = [
-    { bg: 'bg-blue-50', border: 'border-blue-100', text: 'text-blue-900', accent: 'bg-blue-600' },
-    { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-900', accent: 'bg-emerald-600' },
-    { bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-900', accent: 'bg-amber-600' },
-    { bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-900', accent: 'bg-purple-600' },
-    { bg: 'bg-rose-50', border: 'border-rose-100', text: 'text-rose-900', accent: 'bg-rose-600' },
-    { bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-900', accent: 'bg-indigo-600' },
-    { bg: 'bg-teal-50', border: 'border-teal-100', text: 'text-teal-900', accent: 'bg-teal-600' },
-  ];
-
-  const getTaskStyle = (taskId: string) => {
-    const taskIndex = tasks.findIndex(t => t.id === taskId);
-    if (taskIndex === -1) {
-      let hash = 0;
-      for (let i = 0; i < taskId.length; i++) {
-        hash = taskId.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      return boxColors[Math.abs(hash) % boxColors.length];
-    }
-    return boxColors[taskIndex % boxColors.length];
-  };
-
-  const pendingLeads = submissions.filter(s => s.status === TaskStatus.PENDING);
-  const receivedLeads = submissions.filter(s => s.status === TaskStatus.RECEIVED);
-  const approvedLeads = submissions.filter(s => s.status === TaskStatus.APPROVED);
-  
-  const waitingPayoutValue = receivedLeads.reduce((acc, curr) => acc + curr.amount, 0);
-
+  // Task Form State
   const [formTask, setFormTask] = useState<{
     title: string;
     rate: string;
@@ -88,297 +51,152 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
     color: string;
     category: 'Social' | 'Survey' | 'Ads' | 'Bonus';
     tutorialUrl: string;
+    description: string;
   }>({
-    title: '',
-    rate: '5',
-    rateType: 'ID',
-    buttonText: 'Submit',
-    limit: '100',
-    icon: '📋',
-    color: 'bg-slate-200',
-    category: 'Social',
-    tutorialUrl: ''
+    title: '', rate: '5', rateType: 'Per ID', buttonText: 'Submit', limit: '100', icon: '📋', color: 'bg-emerald-500', category: 'Social', tutorialUrl: '', description: ''
   });
 
-  useEffect(() => {
-    if (editingTask) {
-      setFormTask({
-        title: editingTask.title,
-        rate: editingTask.rate.toString(),
-        rateType: editingTask.rateType,
-        buttonText: editingTask.buttonText || 'Submit',
-        limit: editingTask.limit.toString(),
-        icon: editingTask.icon,
-        color: editingTask.color,
-        category: editingTask.category,
-        tutorialUrl: editingTask.tutorialUrl || ''
-      });
-      setShowTaskForm(true);
-      setTimeout(() => {
-        formRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    }
-  }, [editingTask]);
-
   const resetForm = () => {
-    setFormTask({
-      title: '',
-      rate: '5',
-      rateType: 'ID',
-      buttonText: 'Submit',
-      limit: '100',
-      icon: '📋',
-      color: 'bg-slate-200',
-      category: 'Social',
-      tutorialUrl: ''
-    });
+    setFormTask({ title: '', rate: '5', rateType: 'Per ID', buttonText: 'Submit', limit: '100', icon: '📋', color: 'bg-emerald-500', category: 'Social', tutorialUrl: '', description: '' });
     setEditingTask(null);
     setShowTaskForm(false);
   };
 
-  const handleOpenNewTaskForm = () => {
-    resetForm();
-    setActiveTab('TASKS');
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setFormTask({
+      title: task.title,
+      rate: task.rate.toString(),
+      rateType: task.rateType,
+      buttonText: task.buttonText,
+      limit: task.limit.toString(),
+      icon: task.icon,
+      color: task.color,
+      category: task.category,
+      tutorialUrl: task.tutorialUrl || '',
+      description: task.description || ''
+    });
     setShowTaskForm(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
-  const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSaveTask = (e: React.FormEvent) => {
+    e.preventDefault();
+    const taskData: Task = {
+      id: editingTask ? editingTask.id : `t${Date.now()}`,
+      title: formTask.title,
+      rate: parseFloat(formTask.rate),
+      rateType: formTask.rateType,
+      buttonText: formTask.buttonText,
+      limit: parseInt(formTask.limit),
+      completed: editingTask ? editingTask.completed : 0,
+      icon: formTask.icon,
+      color: formTask.color,
+      category: formTask.category,
+      tutorialUrl: formTask.tutorialUrl,
+      description: formTask.description
+    };
+    if (editingTask) onUpdateTask(taskData);
+    else onAddTask(taskData);
+    resetForm();
+  };
+
+  const handleUpdateSecurity = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdateAdminCredentials({ username: secUsername, password: secPassword });
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormTask(prev => ({ 
-          ...prev, 
-          icon: reader.result as string,
-          color: 'bg-white' 
-        }));
+        setFormTask(prev => ({ ...prev, icon: reader.result as string }));
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleMethodIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewMethod(prev => ({ ...prev, icon: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleAddMethod = () => {
-    if (!newMethod.name || !newMethod.icon) return;
-    const methodId = newMethod.name.toLowerCase().replace(/\s+/g, '-');
-    setEditAppConfig({
-      ...editAppConfig,
-      withdrawalMethods: [...editAppConfig.withdrawalMethods, { ...newMethod, id: methodId }]
+  const handleAdjustment = (id: string, field: 'quantity' | 'rate', value: number, initialQty: number, initialRate: number) => {
+    setManualAdjustments(prev => {
+      const current = prev[id] || { quantity: initialQty, rate: initialRate };
+      return { ...prev, [id]: { ...current, [field]: value } };
     });
-    setNewMethod({ id: '', name: '', icon: '', color: 'border-slate-200', activeBg: 'bg-slate-50' });
-    setShowMethodForm(false);
-  };
-
-  const handleRemoveMethod = (id: string) => {
-    setEditAppConfig({
-      ...editAppConfig,
-      withdrawalMethods: editAppConfig.withdrawalMethods.filter(m => m.id !== id)
-    });
-  };
-
-  const handleSaveFinanceConfig = () => {
-    onUpdateAppConfig(editAppConfig);
-    alert("Financial settings updated successfully!");
   };
 
   const renderIcon = (icon: string, className: string = "w-full h-full object-cover rounded-xl") => {
     if (icon.startsWith('data:image') || icon.startsWith('http')) {
       return <img src={icon} alt="Icon" className={className} />;
     }
-    return <span className="text-xl">{icon}</span>;
+    return <span className="text-xl flex items-center justify-center">{icon}</span>;
   };
-
-  const getUnitLabel = (type: string) => {
-    return `1 ${type}`;
-  };
-
-  const handleQuantityChange = (id: string, value: string) => {
-    const num = parseInt(value) || 0;
-    setEditedQuantities(prev => ({ ...prev, [id]: num }));
-  };
-
-  const getHeaderDate = (isoString: string) => {
-    const date = new Date(isoString);
-    const day = date.getDate();
-    const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-    return `${day} ${month}`;
-  };
-
-  const handleSubmitForm = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formTask.title) return;
-
-    if (editingTask) {
-      const updatedTask: Task = {
-        ...editingTask,
-        title: formTask.title,
-        rate: parseFloat(formTask.rate),
-        rateType: formTask.rateType,
-        buttonText: formTask.buttonText,
-        limit: parseInt(formTask.limit),
-        icon: formTask.icon,
-        color: formTask.color,
-        category: formTask.category,
-        tutorialUrl: formTask.tutorialUrl,
-        description: '' 
-      };
-      onUpdateTask(updatedTask);
-    } else {
-      const newTask: Task = {
-        id: `task-${Date.now()}`,
-        title: formTask.title,
-        rate: parseFloat(formTask.rate),
-        rateType: formTask.rateType,
-        buttonText: formTask.buttonText,
-        limit: parseInt(formTask.limit),
-        completed: 0,
-        icon: formTask.icon,
-        color: formTask.color,
-        category: formTask.category,
-        tutorialUrl: formTask.tutorialUrl,
-        description: '' 
-      };
-      onAddTask(newTask);
-    }
-    resetForm();
-  };
-
-  const handleTutorialUpdateStep = (idx: number, field: keyof TutorialStep, val: string) => {
-    const newSteps = [...editTutorial.steps];
-    newSteps[idx] = { ...newSteps[idx], [field]: val };
-    setEditTutorial({ ...editTutorial, steps: newSteps });
-  };
-
-  const handleAddRoadmapStep = () => {
-    const newStep: TutorialStep = {
-      id: `step-${Date.now()}`,
-      title: 'New Roadmap Step',
-      desc: 'Explain what the user needs to do here.',
-      iconType: 'check',
-      buttonText: 'Watch Tutorial',
-      buttonUrl: ''
-    };
-    setEditTutorial({ ...editTutorial, steps: [...editTutorial.steps, newStep] });
-  };
-
-  const handleRemoveRoadmapStep = (idx: number) => {
-    const newSteps = editTutorial.steps.filter((_, i) => i !== idx);
-    setEditTutorial({ ...editTutorial, steps: newSteps });
-  };
-
-  const handleSaveTutorialConfig = () => {
-    onUpdateTutorialConfig(editTutorial);
-    alert("Global Hub configuration updated successfully!");
-  };
-
-  const handleSaveSecurity = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newAdminUser || !newAdminPass) return;
-    
-    setIsSavingSecurity(true);
-    setTimeout(() => {
-      onUpdateAdminCredentials({
-        username: newAdminUser,
-        password: newAdminPass
-      });
-      setIsSavingSecurity(false);
-      alert("Admin credentials updated successfully!");
-    }, 1500);
-  };
-
-  const groupedPending = pendingLeads.reduce((groups, sub) => {
-    const dateKey = sub.timestamp.split('T')[0];
-    if (!groups[dateKey]) groups[dateKey] = [];
-    groups[dateKey].push(sub);
-    return groups;
-  }, {} as Record<string, Submission[]>);
-
-  const groupedReceived = receivedLeads.reduce((groups, sub) => {
-    const dateKey = sub.timestamp.split('T')[0];
-    if (!groups[dateKey]) groups[dateKey] = [];
-    groups[dateKey].push(sub);
-    return groups;
-  }, {} as Record<string, Submission[]>);
 
   const SubmissionList = ({ groupedItems, tabType }: { groupedItems: Record<string, Submission[]>, tabType: 'LEADS' | 'RECEIVED' }) => {
     return (
-      <div className="space-y-8">
+      <div className="space-y-8 animate-in fade-in duration-300">
         {Object.keys(groupedItems).sort((a,b)=>b.localeCompare(a)).map((dateKey) => (
           <div key={dateKey} className="space-y-4">
             <div className="flex items-center gap-3 px-2">
-              <span className="text-[10px] font-semibold text-slate-800 uppercase tracking-widest">{getHeaderDate(dateKey)} {tabType === 'RECEIVED' ? 'RECEIVED' : 'QUEUE'}</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[4px]">{dateKey} {tabType === 'RECEIVED' ? 'RECEIVED' : 'QUEUE'}</span>
             </div>
             <div className="space-y-4">
               {groupedItems[dateKey].map((sub) => {
-                const currentQuantity = editedQuantities[sub.id] ?? sub.userQuantity;
-                const currentTotal = sub.rate * currentQuantity;
-                const style = getTaskStyle(sub.taskId);
+                const adj = manualAdjustments[sub.id] || { quantity: sub.userQuantity, rate: sub.rate };
                 return (
-                  <div key={sub.id} className={`${style.bg} ${style.border} rounded-[32px] p-5 border shadow-sm flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                  <div key={sub.id} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[32px] p-5 shadow-sm transition-colors flex flex-col gap-5">
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-slate-400 border border-slate-100 overflow-hidden">
+                        <div className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400">
                           <User size={18} />
                         </div>
                         <div>
-                          <h4 className={`font-semibold text-[13px] ${style.text} leading-none truncate tracking-tight`}>{sub.userName}</h4>
-                          <p className="text-[8px] font-medium text-slate-500 uppercase mt-1 tracking-widest">Submitter</p>
+                          <h4 className="font-bold text-[13px] text-slate-800 dark:text-slate-100 tracking-tight leading-none">{sub.userName}</h4>
+                          <p className="text-[8px] font-medium text-slate-500 uppercase mt-1 tracking-widest">{sub.userEmail}</p>
                         </div>
                       </div>
-                      <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tighter">
-                        {new Date(sub.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
                     </div>
-                    <div className="bg-white/60 p-4 rounded-2xl border border-white/50 backdrop-blur-sm">
-                      <div className="flex justify-between items-center mb-2">
-                        <h5 className="font-semibold text-slate-900 text-[11px] uppercase tracking-tight">{sub.taskTitle}</h5>
-                        <p className="text-[10px] font-semibold text-emerald-600">৳{sub.rate}/{getUnitLabel(sub.rateType)}</p>
+
+                    <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center justify-between mb-3">
+                         <h5 className="font-bold text-slate-900 dark:text-white text-[11px] uppercase tracking-tight">{sub.taskTitle}</h5>
+                         {sub.screenshot && (
+                           <button onClick={() => setViewingScreenshot(sub.screenshot || null)} className="text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
+                             <ImageIcon size={12} /> View Proof
+                           </button>
+                         )}
                       </div>
-                      <p className="text-slate-700 font-medium text-[11px] leading-relaxed break-words bg-slate-50/50 p-2 rounded-xl">{sub.details}</p>
-                      {sub.screenshot && (
-                        <button onClick={() => setViewingScreenshot(sub.screenshot || null)} className="mt-3 flex items-center gap-2 text-blue-600 font-semibold text-[9px] uppercase tracking-widest bg-blue-50 px-3 py-2 rounded-xl border border-blue-100 active:scale-95 transition-all w-full justify-center">
-                          <ImageIcon size={14} /> View Proof Screenshot
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
-                        <div>
-                          <p className="text-[8px] font-medium text-slate-400 uppercase mb-0.5 tracking-widest">Qty Control</p>
+                      
+                      <div className="grid grid-cols-2 gap-3 mb-2">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Manual Qty</label>
                           <input 
-                            type="number"
-                            value={currentQuantity}
-                            onChange={(e) => handleQuantityChange(sub.id, e.target.value)}
-                            className="w-full bg-transparent text-sm font-semibold text-slate-900 focus:outline-none"
+                            type="number" 
+                            value={adj.quantity}
+                            onChange={(e) => handleAdjustment(sub.id, 'quantity', parseInt(e.target.value) || 0, sub.userQuantity, sub.rate)}
+                            className="w-full bg-white dark:bg-slate-800 p-2 rounded-xl text-[11px] font-bold dark:text-white border border-transparent focus:border-emerald-500 outline-none" 
                           />
                         </div>
-                        <div className="text-right border-l border-slate-100 pl-4">
-                          <p className="text-[8px] font-medium text-slate-400 uppercase mb-0.5 tracking-widest">Final Value</p>
-                          <p className={`text-[13px] font-semibold ${tabType === 'RECEIVED' ? 'text-blue-700' : 'text-emerald-700'}`}>৳{currentTotal.toLocaleString()}</p>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Manual Rate (৳)</label>
+                          <input 
+                            type="number" 
+                            value={adj.rate}
+                            onChange={(e) => handleAdjustment(sub.id, 'rate', parseFloat(e.target.value) || 0, sub.userQuantity, sub.rate)}
+                            className="w-full bg-white dark:bg-slate-800 p-2 rounded-xl text-[11px] font-bold dark:text-white border border-transparent focus:border-emerald-500 outline-none" 
+                          />
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => onAction(sub.id, TaskStatus.REJECTED)} className="w-12 h-12 bg-white text-rose-500 rounded-2xl border border-rose-100 flex items-center justify-center shadow-sm active:scale-90 transition-all"><X size={20} /></button>
-                        {tabType === 'LEADS' ? (
-                          <button onClick={() => onAction(sub.id, TaskStatus.RECEIVED, currentQuantity)} className="px-4 h-12 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-100 flex items-center gap-2 active:scale-90 transition-all font-semibold uppercase text-[10px] tracking-widest">
-                            <Check size={16} /> Receive
-                          </button>
-                        ) : (
-                          <button onClick={() => onAction(sub.id, TaskStatus.APPROVED, currentQuantity)} className="px-4 h-12 bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-100 flex items-center gap-2 active:scale-90 transition-all font-semibold uppercase text-[10px] tracking-widest">
-                            <Check size={16} /> Approve
-                          </button>
-                        )}
+                      <div className="flex justify-between items-center px-1">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Adjusted Total</span>
+                        <span className="text-[14px] font-black text-emerald-600 dark:text-emerald-400">৳{(adj.quantity * adj.rate).toFixed(2)}</span>
                       </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                       <button onClick={() => onAction(sub.id, TaskStatus.REJECTED)} className="flex-1 bg-rose-50 dark:bg-rose-900/20 text-rose-500 h-11 rounded-2xl border border-rose-100 dark:border-rose-900/30 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest">Reject</button>
+                       <button onClick={() => onAction(sub.id, tabType === 'LEADS' ? TaskStatus.RECEIVED : TaskStatus.APPROVED, adj.quantity)} className={`flex-1 ${tabType === 'LEADS' ? 'bg-blue-600' : 'bg-emerald-600'} text-white h-11 rounded-2xl shadow-lg font-bold text-[10px] uppercase tracking-widest`}>
+                          {tabType === 'LEADS' ? 'Receive' : 'Approve'}
+                       </button>
                     </div>
                   </div>
                 );
@@ -390,350 +208,354 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
     );
   };
 
+  const FinanceManagement = () => {
+    const [minWithdrawal, setMinWithdrawal] = useState(appConfig.minWithdrawal.toString());
+    const [showGatewayForm, setShowGatewayForm] = useState(false);
+    const [gatewayForm, setGatewayForm] = useState<WithdrawalMethod>({ id: '', name: '', icon: '', color: 'border-slate-200', activeBg: 'bg-slate-50' });
+    const gatewayLogoRef = useRef<HTMLInputElement>(null);
+
+    const handleSaveConfig = () => {
+      onUpdateAppConfig({ ...appConfig, minWithdrawal: parseFloat(minWithdrawal) || 0 });
+    };
+
+    const handleGatewayLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => setGatewayForm(prev => ({ ...prev, icon: reader.result as string }));
+        reader.readAsDataURL(file);
+      }
+    };
+
+    const handleAddGateway = () => {
+      if (!gatewayForm.name || !gatewayForm.icon) return;
+      const id = gatewayForm.name.toLowerCase().replace(/\s/g, '-');
+      const newMethod = { ...gatewayForm, id };
+      onUpdateAppConfig({ ...appConfig, withdrawalMethods: [...appConfig.withdrawalMethods, newMethod] });
+      setShowGatewayForm(false);
+      setGatewayForm({ id: '', name: '', icon: '', color: 'border-slate-200', activeBg: 'bg-slate-50' });
+    };
+
+    const handleDeleteGateway = (id: string) => {
+      onUpdateAppConfig({ ...appConfig, withdrawalMethods: appConfig.withdrawalMethods.filter(m => m.id !== id) });
+    };
+
+    return (
+      <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+        <div className="bg-white dark:bg-slate-900 p-7 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm">
+           <h4 className="text-[11px] font-black text-slate-800 dark:text-white uppercase tracking-[4px] mb-6">Global Threshold</h4>
+           <div className="space-y-4">
+              <div className="relative">
+                <input 
+                  type="number" 
+                  value={minWithdrawal} 
+                  onChange={e => setMinWithdrawal(e.target.value)} 
+                  className="w-full bg-slate-50 dark:bg-slate-950 p-5 rounded-3xl text-xl font-black dark:text-white border-2 border-transparent focus:border-emerald-500 outline-none transition-all pl-12" 
+                />
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-600 dark:text-emerald-400 font-bold text-xl">৳</span>
+              </div>
+              <button onClick={handleSaveConfig} className="w-full bg-slate-900 dark:bg-emerald-600 text-white py-5 rounded-3xl font-bold text-[11px] uppercase tracking-[3px] active:scale-95 transition-all">Update Minimum Amount</button>
+           </div>
+        </div>
+
+        <div className="space-y-4">
+           <div className="flex justify-between items-center px-1">
+             <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[4px]">Payment Gateways</h4>
+             <button onClick={() => setShowGatewayForm(true)} className="bg-emerald-600 text-white p-2 rounded-xl active:scale-90 transition-all"><Plus size={16} /></button>
+           </div>
+
+           {showGatewayForm && (
+             <div className="bg-white dark:bg-slate-900 p-6 rounded-[32px] border border-emerald-500/30 shadow-xl space-y-4 animate-in zoom-in-95 duration-200">
+                <div className="flex gap-4">
+                   <div onClick={() => gatewayLogoRef.current?.click()} className="w-16 h-16 bg-slate-50 dark:bg-slate-950 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0 cursor-pointer overflow-hidden">
+                      {gatewayForm.icon ? <img src={gatewayForm.icon} className="w-full h-full object-contain" /> : <ImageIcon className="text-slate-300" />}
+                   </div>
+                   <input type="file" ref={gatewayLogoRef} className="hidden" onChange={handleGatewayLogo} accept="image/*" />
+                   <input 
+                    type="text" 
+                    placeholder="Gateway Name (e.g. bKash)" 
+                    value={gatewayForm.name}
+                    onChange={e => setGatewayForm({...gatewayForm, name: e.target.value})}
+                    className="flex-1 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl text-xs font-bold dark:text-white border-none focus:ring-2 focus:ring-emerald-500" 
+                   />
+                </div>
+                <div className="flex gap-2">
+                   <button onClick={() => setShowGatewayForm(false)} className="flex-1 bg-slate-50 dark:bg-slate-800 py-4 rounded-2xl font-bold text-[10px] text-slate-400 uppercase tracking-widest">Cancel</button>
+                   <button onClick={handleAddGateway} className="flex-1 bg-emerald-600 text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest">Add Gateway</button>
+                </div>
+             </div>
+           )}
+
+           <div className="grid grid-cols-2 gap-3">
+             {appConfig.withdrawalMethods.map(m => (
+               <div key={m.id} className="bg-white dark:bg-slate-900 p-4 rounded-[32px] border border-slate-100 dark:border-slate-800 flex items-center justify-between group">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <img src={m.icon} className="w-8 h-8 object-contain shrink-0" />
+                    <span className="text-[10px] font-black text-slate-800 dark:text-white truncate uppercase tracking-tighter">{m.name}</span>
+                  </div>
+                  <button onClick={() => handleDeleteGateway(m.id)} className="p-2 text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={14} /></button>
+               </div>
+             ))}
+           </div>
+        </div>
+      </div>
+    );
+  };
+
+  const RoadmapManagement = () => {
+    const [editingStepId, setEditingStepId] = useState<string | null>(null);
+    const [stepForm, setStepForm] = useState<TutorialStep>({ id: '', title: '', desc: '', icon: '🌟', buttonText: '', buttonUrl: '' });
+    const stepLogoRef = useRef<HTMLInputElement>(null);
+
+    const [heroVideo, setHeroVideo] = useState(tutorialConfig.heroVideoUrl);
+    const [supportTele, setSupportTele] = useState(tutorialConfig.supportTelegram);
+    const [channelTele, setChannelTele] = useState(tutorialConfig.telegramChannel);
+
+    const handleSaveMeta = () => {
+      onUpdateTutorialConfig({ ...tutorialConfig, heroVideoUrl: heroVideo, supportTelegram: supportTele, telegramChannel: channelTele });
+    };
+
+    const handleSaveStep = () => {
+      if (!stepForm.title || !stepForm.desc) return;
+      const newSteps = [...tutorialConfig.steps];
+      if (editingStepId) {
+        const idx = newSteps.findIndex(s => s.id === editingStepId);
+        newSteps[idx] = { ...stepForm };
+      } else {
+        newSteps.push({ ...stepForm, id: `step-${Date.now()}` });
+      }
+      onUpdateTutorialConfig({ ...tutorialConfig, steps: newSteps });
+      setEditingStepId(null);
+      setStepForm({ id: '', title: '', desc: '', icon: '🌟', buttonText: '', buttonUrl: '' });
+    };
+
+    const handleDeleteStep = (id: string) => {
+      onUpdateTutorialConfig({ ...tutorialConfig, steps: tutorialConfig.steps.filter(s => s.id !== id) });
+    };
+
+    const handleStepLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => setStepForm(prev => ({ ...prev, icon: reader.result as string }));
+        reader.readAsDataURL(file);
+      }
+    };
+
+    return (
+      <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+        <div className="bg-white dark:bg-slate-900 p-7 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
+           <h4 className="text-[11px] font-black text-slate-800 dark:text-white uppercase tracking-[4px] mb-2">Platform Metadata</h4>
+           <div className="space-y-3">
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl">
+                 <Video className="text-slate-400 shrink-0" size={18} />
+                 <input type="text" placeholder="Hero Video URL" value={heroVideo} onChange={e => setHeroVideo(e.target.value)} className="w-full bg-transparent text-[11px] font-bold dark:text-white outline-none" />
+              </div>
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl">
+                 <Smartphone className="text-slate-400 shrink-0" size={18} />
+                 <input type="text" placeholder="Telegram Support Username" value={supportTele} onChange={e => setSupportTele(e.target.value)} className="w-full bg-transparent text-[11px] font-bold dark:text-white outline-none" />
+              </div>
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl">
+                 <Megaphone className="text-slate-400 shrink-0" size={18} />
+                 <input type="text" placeholder="Telegram Channel Username" value={channelTele} onChange={e => setChannelTele(e.target.value)} className="w-full bg-transparent text-[11px] font-bold dark:text-white outline-none" />
+              </div>
+              <button onClick={handleSaveMeta} className="w-full bg-slate-900 dark:bg-emerald-600 text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all">Apply Global Changes</button>
+           </div>
+        </div>
+
+        <div className="space-y-4">
+           <div className="flex justify-between items-center px-1">
+             <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[4px]">Earning Roadmap</h4>
+             <button onClick={() => { setEditingStepId(null); setStepForm({ id: '', title: '', desc: '', icon: '🌟', buttonText: '', buttonUrl: '' }); }} className="bg-emerald-600 text-white p-2 rounded-xl active:scale-90 transition-all"><Plus size={16} /></button>
+           </div>
+
+           <div className="bg-white dark:bg-slate-900 p-6 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-xl space-y-4">
+              <div className="flex gap-4 items-center">
+                 <div onClick={() => stepLogoRef.current?.click()} className="w-20 h-20 rounded-[28px] bg-slate-50 dark:bg-slate-950 border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center cursor-pointer overflow-hidden text-2xl">
+                    {renderIcon(stepForm.icon)}
+                 </div>
+                 <input type="file" ref={stepLogoRef} className="hidden" onChange={handleStepLogo} accept="image/*" />
+                 <div className="flex-1 space-y-3">
+                    <input type="text" placeholder="Step Title" value={stepForm.title} onChange={e => setStepForm({...stepForm, title: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl text-[11px] font-black dark:text-white outline-none border-none focus:ring-2 focus:ring-emerald-500" />
+                    <textarea placeholder="Step Description" value={stepForm.desc} onChange={e => setStepForm({...stepForm, desc: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl text-[10px] font-medium dark:text-white outline-none border-none focus:ring-2 focus:ring-emerald-500 resize-none h-16"></textarea>
+                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                 <input type="text" placeholder="Action Label" value={stepForm.buttonText} onChange={e => setStepForm({...stepForm, buttonText: e.target.value})} className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl text-[10px] font-bold dark:text-white outline-none border-none focus:ring-2 focus:ring-emerald-500" />
+                 <input type="text" placeholder="Action URL" value={stepForm.buttonUrl} onChange={e => setStepForm({...stepForm, buttonUrl: e.target.value})} className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl text-[10px] font-bold dark:text-white outline-none border-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <button onClick={handleSaveStep} className="w-full bg-emerald-600 text-white py-5 rounded-3xl font-bold text-[11px] uppercase tracking-[3px] shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                 <PlusCircle size={18} /> {editingStepId ? 'Update Entry' : 'Add to Roadmap'}
+              </button>
+           </div>
+
+           <div className="space-y-3">
+             {tutorialConfig.steps.map(step => (
+               <div key={step.id} className="bg-white dark:bg-slate-900 p-5 rounded-[32px] border border-slate-100 dark:border-slate-800 flex items-center gap-4 group">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950 shrink-0 overflow-hidden flex items-center justify-center text-xl">
+                     {renderIcon(step.icon)}
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                     <h5 className="text-[12px] font-bold text-slate-800 dark:text-slate-100 truncate">{step.title}</h5>
+                     <p className="text-[9px] font-medium text-slate-400 dark:text-slate-500 truncate leading-none mt-1">{step.desc}</p>
+                  </div>
+                  <div className="flex gap-2">
+                     <button onClick={() => { setStepForm(step); setEditingStepId(step.id); }} className="p-2 text-blue-500 bg-blue-50 dark:bg-blue-900/20 rounded-xl"><Edit3 size={16} /></button>
+                     <button onClick={() => handleDeleteStep(step.id)} className="p-2 text-rose-500 bg-rose-50 dark:bg-rose-900/20 rounded-xl"><Trash2 size={16} /></button>
+                  </div>
+               </div>
+             ))}
+           </div>
+        </div>
+      </div>
+    );
+  };
+
+  const groupedPending = submissions.filter(s => s.status === TaskStatus.PENDING).reduce((groups, sub) => {
+    const dateKey = sub.timestamp.split('T')[0];
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(sub);
+    return groups;
+  }, {} as Record<string, Submission[]>);
+
+  const groupedReceived = submissions.filter(s => s.status === TaskStatus.RECEIVED).reduce((groups, sub) => {
+    const dateKey = sub.timestamp.split('T')[0];
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(sub);
+    return groups;
+  }, {} as Record<string, Submission[]>);
+
   return (
-    <div className="p-4 animate-in fade-in duration-500">
-      {/* Screenshot Viewer Overlay */}
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen p-4 transition-colors duration-300">
       {viewingScreenshot && (
-        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
-          <button onClick={() => setViewingScreenshot(null)} className="absolute top-6 right-6 text-white p-2 hover:bg-white/10 rounded-full">
-            <X size={32} />
-          </button>
-          <img src={viewingScreenshot} alt="Submission Screenshot" className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl" />
-          <p className="text-white/60 text-xs font-semibold uppercase mt-4 tracking-widest">User Submission Proof</p>
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-300" onClick={() => setViewingScreenshot(null)}>
+          <button className="absolute top-6 right-6 text-white p-2 hover:bg-white/10 rounded-full transition-colors"><X size={32} /></button>
+          <img src={viewingScreenshot} alt="Full Proof" className="max-w-full max-h-[85vh] object-contain rounded-3xl shadow-2xl animate-in zoom-in-95 duration-300" />
         </div>
       )}
 
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
-          <ArrowLeft size={24} className="text-slate-800" />
+      <div className="flex items-center gap-3 mb-6 px-1">
+        <button onClick={onBack} className="p-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-slate-800 dark:text-slate-100 shadow-sm active:scale-90 transition-all">
+          <ArrowLeft size={22} />
         </button>
-        <div className="flex items-center gap-3 flex-1">
-          <div className="bg-emerald-600 p-2.5 rounded-2xl text-white shadow-xl shadow-emerald-100">
-            <ShieldAlert size={20} />
+        <div className="flex items-center gap-3 flex-1 overflow-hidden">
+          <div className="bg-slate-900 dark:bg-emerald-600 p-2.5 rounded-2xl text-white shadow-xl shadow-emerald-500/10 shrink-0"><ShieldAlert size={20} /></div>
+          <div className="flex flex-col">
+            <h2 className="text-[17px] font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none uppercase">Admin Core</h2>
+            <p className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[3px] mt-1.5 leading-none">System Management</p>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-none">Admin Panel</h2>
-            <p className="text-[9px] font-medium text-slate-400 uppercase tracking-widest mt-1">Management Hub</p>
-          </div>
-        </div>
-        
-        <div className="flex gap-2">
-          <button 
-            onClick={() => setActiveTab('SECURITY')}
-            className={`p-3 rounded-2xl shadow-xl transition-all ${activeTab === 'SECURITY' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-400'}`}
-          >
-            <Shield size={18} />
-          </button>
-          <button 
-            onClick={handleOpenNewTaskForm}
-            className="bg-slate-900 text-white p-3 rounded-2xl shadow-xl flex items-center gap-2 active:scale-95 transition-all"
-          >
-            <Plus size={18} />
-            <span className="text-[10px] font-semibold uppercase tracking-widest">New Task</span>
-          </button>
         </div>
       </div>
 
-      <div className="flex bg-slate-100 p-1 rounded-[22px] mb-6 overflow-x-auto no-scrollbar gap-1">
-        <button 
-          onClick={() => { setActiveTab('OVERVIEW'); setShowTaskForm(false); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'OVERVIEW' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
-        >
-          Overview
-        </button>
-        <button 
-          onClick={() => { setActiveTab('LEADS'); setShowTaskForm(false); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'LEADS' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
-        >
-          Queue
-        </button>
-        <button 
-          onClick={() => { setActiveTab('RECEIVED'); setShowTaskForm(false); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'RECEIVED' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
-        >
-          Received
-        </button>
-        <button 
-          onClick={() => { setActiveTab('WITHDRAWALS'); setShowTaskForm(false); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'WITHDRAWALS' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
-        >
-          Payouts
-        </button>
-        <button 
-          onClick={() => { setActiveTab('TASKS'); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'TASKS' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
-        >
-          Inventory
-        </button>
-        <button 
-          onClick={() => { setActiveTab('TUTORIAL_MANAGE'); setShowTaskForm(false); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'TUTORIAL_MANAGE' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
-        >
-          Global Hub
-        </button>
-        <button 
-          onClick={() => { setActiveTab('FINANCE'); setShowTaskForm(false); }}
-          className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2.5 rounded-[18px] font-semibold text-[8px] uppercase tracking-widest transition-all ${activeTab === 'FINANCE' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
-        >
-          Finance
-        </button>
+      <div className="flex bg-slate-100 dark:bg-slate-900 p-1.5 rounded-[26px] mb-8 overflow-x-auto no-scrollbar gap-1.5 shadow-inner">
+        {(['OVERVIEW', 'LEADS', 'RECEIVED', 'WITHDRAWALS', 'TASKS', 'TUTORIAL_MANAGE', 'FINANCE', 'SECURITY'] as const).map(tab => (
+          <button 
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 min-w-[85px] py-3.5 rounded-[22px] font-black text-[8px] uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-400 dark:text-slate-600'}`}
+          >
+            {tab.split('_')[0]}
+          </button>
+        ))}
       </div>
 
-      {activeTab === 'SECURITY' && (
-        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-           <div className="bg-slate-950 rounded-[40px] p-8 text-white shadow-2xl relative overflow-hidden">
-             <div className="absolute -top-24 -left-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
-             
-             <div className="flex items-center gap-4 mb-8 relative z-10">
-               <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-                 <Shield size={24} />
+      {activeTab === 'OVERVIEW' && (
+        <div className="space-y-6 animate-in fade-in duration-500">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-slate-900 dark:bg-slate-900 p-6 rounded-[40px] text-white relative overflow-hidden shadow-2xl border border-transparent dark:border-slate-800">
+               <h3 className="text-4xl font-black tracking-tighter leading-none mb-1">{analytics.totalSignups}</h3>
+               <p className="text-[9px] font-black uppercase tracking-[3px] opacity-40">Registered</p>
+               <Users className="absolute -bottom-6 -right-6 text-white/5 rotate-12" size={120} />
+            </div>
+            <div className="bg-emerald-600 dark:bg-emerald-600 p-6 rounded-[40px] text-white relative overflow-hidden shadow-2xl border border-transparent dark:border-slate-800">
+               <h3 className="text-4xl font-black tracking-tighter leading-none mb-1">{analytics.currentlyOnline}</h3>
+               <p className="text-[9px] font-black uppercase tracking-[3px] opacity-40">Live Feed</p>
+               <Zap className="absolute -bottom-6 -right-6 text-white/5 rotate-12" size={120} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'TASKS' && (
+        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+           <div className="flex justify-between items-center px-2">
+             <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[4px]">Inventory Hub</h3>
+             <button onClick={() => { resetForm(); setShowTaskForm(true); }} className="bg-emerald-600 text-white p-3 rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest active:scale-90 transition-all shadow-lg shadow-emerald-500/10">
+               <Plus size={16} /> New Entry
+             </button>
+           </div>
+
+           {showTaskForm && (
+             <div ref={formRef} className="bg-white dark:bg-slate-900 p-7 rounded-[40px] shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-300">
+               <div className="flex justify-between items-center mb-8">
+                 <h4 className="font-black text-slate-900 dark:text-slate-100 uppercase tracking-[4px] text-[11px]">{editingTask ? 'Modify Instance' : 'System Registry'}</h4>
+                 <button onClick={resetForm} className="bg-slate-50 dark:bg-slate-800 p-2 rounded-full text-slate-400 hover:text-rose-500 transition-all"><X size={20} /></button>
                </div>
-               <div>
-                 <h3 className="text-lg font-semibold tracking-tight leading-none text-white">Security Console</h3>
-                 <p className="text-[10px] font-medium text-white/30 uppercase tracking-widest mt-1">Update Master Credentials</p>
-               </div>
+               
+               <form onSubmit={handleSaveTask} className="space-y-5">
+                 <div className="flex gap-5 items-center">
+                    <div onClick={() => taskLogoInputRef.current?.click()} className="w-24 h-24 rounded-[32px] bg-slate-50 dark:bg-slate-950 border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all group relative">
+                       {formTask.icon ? renderIcon(formTask.icon) : <div className="text-slate-300 group-hover:text-emerald-500"><ImageIcon size={32}/></div>}
+                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Upload size={20} className="text-white" />
+                       </div>
+                    </div>
+                    <input type="file" ref={taskLogoInputRef} className="hidden" onChange={handleLogoUpload} accept="image/*" />
+                    <div className="flex-1 space-y-3">
+                       <input type="text" placeholder="Task Name" value={formTask.title} onChange={e => setFormTask({...formTask, title: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl text-[12px] font-black dark:text-white border-none focus:ring-2 focus:ring-emerald-500 transition-all" required />
+                       <input type="text" placeholder="Unit (e.g. Per ID)" value={formTask.rateType} onChange={e => setFormTask({...formTask, rateType: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl text-[12px] font-black dark:text-white border-none focus:ring-2 focus:ring-emerald-500 transition-all" required />
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Reward (৳)</label>
+                       <input type="number" step="0.1" value={formTask.rate} onChange={e => setFormTask({...formTask, rate: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl text-[12px] font-black dark:text-white border-none focus:ring-2 focus:ring-emerald-500 transition-all" required />
+                    </div>
+                    <div className="space-y-1.5">
+                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Cap Limit</label>
+                       <input type="number" value={formTask.limit} onChange={e => setFormTask({...formTask, limit: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl text-[12px] font-black dark:text-white border-none focus:ring-2 focus:ring-emerald-500 transition-all" required />
+                    </div>
+                 </div>
+
+                 <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Instruction Set</label>
+                    <textarea rows={3} value={formTask.description} onChange={e => setFormTask({...formTask, description: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl text-[11px] font-medium dark:text-white border-none focus:ring-2 focus:ring-emerald-500 transition-all resize-none h-24" placeholder="Clear, concise steps..."></textarea>
+                 </div>
+
+                 <button type="submit" className="w-full bg-slate-900 dark:bg-emerald-600 text-white py-6 rounded-3xl font-black text-[12px] uppercase tracking-[4px] shadow-2xl active:scale-[0.98] transition-all mt-4">Deploy Configuration</button>
+               </form>
              </div>
+           )}
 
-             <form onSubmit={handleSaveSecurity} className="space-y-6 relative z-10">
-                <div className="space-y-2">
-                  <label className="text-[9px] font-medium text-white/40 uppercase tracking-widest ml-1">New Administrator Username</label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-indigo-400 transition-colors">
-                      <User size={18} />
-                    </div>
-                    <input 
-                      type="text"
-                      value={newAdminUser}
-                      onChange={(e) => setNewAdminUser(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 p-5 pl-12 rounded-3xl text-white font-semibold focus:outline-none focus:border-indigo-500 transition-all placeholder:text-white/10"
-                      placeholder="Username"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[9px] font-medium text-white/40 uppercase tracking-widest ml-1">New Administrative Password</label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-indigo-400 transition-colors">
-                      <Lock size={18} />
-                    </div>
-                    <input 
-                      type={showPass ? 'text' : 'password'}
-                      value={newAdminPass}
-                      onChange={(e) => setNewAdminPass(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 p-5 pl-12 pr-12 rounded-3xl text-white font-semibold focus:outline-none focus:border-indigo-500 transition-all placeholder:text-white/10"
-                      placeholder="••••••••"
-                      required
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => setShowPass(!showPass)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
-                    >
-                      {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                <button 
-                  type="submit"
-                  disabled={isSavingSecurity}
-                  className="w-full bg-indigo-600 py-6 rounded-3xl text-white font-semibold text-[11px] uppercase tracking-[3px] shadow-[0_0_30px_rgba(79,70,229,0.3)] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-                >
-                  {isSavingSecurity ? (
-                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <>Update Admin Access <Save size={18} /></>
-                  )}
-                </button>
-             </form>
+           <div className="grid grid-cols-1 gap-4">
+             {tasks.map(task => (
+               <div key={task.id} className="bg-white dark:bg-slate-900 p-5 rounded-[40px] border border-slate-100 dark:border-slate-800 flex items-center gap-5 group shadow-sm">
+                 <div className={`${task.color} w-16 h-16 rounded-[28px] flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden text-3xl`}>
+                    <div className="absolute inset-0 bg-white/10"></div>
+                    {renderIcon(task.icon)}
+                 </div>
+                 <div className="flex-1 min-w-0">
+                   <h5 className="text-[14px] font-black text-slate-900 dark:text-slate-100 truncate tracking-tight">{task.title}</h5>
+                   <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[2px] mt-1">৳{task.rate} • {task.rateType} • Cap {task.limit}</p>
+                 </div>
+                 <div className="flex gap-2.5">
+                   <button onClick={() => handleEditTask(task)} className="p-3.5 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 transition-all rounded-2xl active:scale-90"><Edit3 size={18} /></button>
+                   <button onClick={() => onDeleteTask(task.id)} className="p-3.5 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-all rounded-2xl active:scale-90"><Trash2 size={18} /></button>
+                 </div>
+               </div>
+             ))}
            </div>
         </div>
       )}
 
-      {activeTab === 'FINANCE' && (
-        <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
-          <div className="bg-slate-900 rounded-[40px] p-8 text-white shadow-2xl relative overflow-hidden">
-            <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
-            
-            <div className="flex items-center gap-4 mb-8 relative z-10">
-              <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <Landmark size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold tracking-tight leading-none">Financial Control</h3>
-                <p className="text-[10px] font-medium text-white/30 uppercase tracking-widest mt-1">Withdrawal Limits & Gateways</p>
-              </div>
-            </div>
-
-            <div className="space-y-8 relative z-10">
-              {/* Min Withdrawal Config */}
-              <div className="bg-white/5 border border-white/10 rounded-[32px] p-6">
-                <label className="block text-[9px] font-medium text-white/40 uppercase tracking-[2px] mb-3 ml-1">Minimum Payout Limit (৳)</label>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 relative group">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold text-lg">৳</span>
-                    <input 
-                      type="number"
-                      value={editAppConfig.minWithdrawal}
-                      onChange={(e) => setEditAppConfig({...editAppConfig, minWithdrawal: parseInt(e.target.value) || 0})}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-xl font-bold focus:outline-none focus:border-emerald-500 transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Methods List */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center px-1">
-                  <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-widest flex items-center gap-2">
-                    <CreditCard size={14} /> Active Gateways
-                  </h4>
-                  <button 
-                    onClick={() => setShowMethodForm(true)}
-                    className="text-[9px] font-semibold text-emerald-400 uppercase tracking-widest flex items-center gap-1 hover:underline"
-                  >
-                    <Plus size={12} /> Add Method
-                  </button>
-                </div>
-
-                {showMethodForm && (
-                  <div className="bg-white/10 border border-white/10 rounded-3xl p-6 space-y-4 animate-in slide-in-from-top-4 duration-300">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[9px] font-medium text-emerald-400 uppercase tracking-widest">New Method Setup</span>
-                      <button onClick={() => setShowMethodForm(false)} className="text-white/40"><X size={16} /></button>
-                    </div>
-                    <div className="space-y-3">
-                      <input 
-                        type="text" 
-                        value={newMethod.name}
-                        onChange={(e) => setNewMethod({...newMethod, name: e.target.value})}
-                        className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm font-semibold focus:outline-none" 
-                        placeholder="Method Name (e.g. PayPal)" 
-                      />
-                      <div className="flex items-center gap-3">
-                        <div onClick={() => fileInputRef.current?.click()} className="flex-1 bg-black/20 border border-dashed border-white/20 rounded-xl h-24 flex flex-col items-center justify-center text-[10px] font-medium uppercase cursor-pointer hover:bg-black/40">
-                          {newMethod.icon ? (
-                            <img src={newMethod.icon} alt="Preview" className="h-12 object-contain" />
-                          ) : (
-                            <>
-                              <Upload size={20} className="mb-1 opacity-40" />
-                              <span>Upload Logo</span>
-                            </>
-                          )}
-                        </div>
-                        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleMethodIconUpload} />
-                      </div>
-                      <button 
-                        onClick={handleAddMethod}
-                        className="w-full bg-emerald-600 py-3 rounded-xl font-semibold text-[10px] uppercase tracking-widest shadow-lg"
-                      >
-                        Add Gateway
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 gap-3">
-                  {editAppConfig.withdrawalMethods.map((method) => (
-                    <div key={method.id} className="bg-white/5 border border-white/10 p-4 rounded-3xl flex items-center justify-between group transition-all">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white rounded-xl p-2 flex items-center justify-center overflow-hidden">
-                          <img src={method.icon} alt={method.name} className="h-full object-contain" />
-                        </div>
-                        <div>
-                          <p className="text-[13px] font-semibold tracking-tight">{method.name}</p>
-                          <p className="text-[8px] font-medium text-white/30 uppercase tracking-widest">Active System ID: {method.id}</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => handleRemoveMethod(method.id)}
-                        className="p-3 text-white/20 hover:text-rose-500 transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <button 
-                onClick={handleSaveFinanceConfig}
-                className="w-full bg-emerald-600 py-6 rounded-[32px] text-white font-semibold text-[11px] uppercase tracking-[3px] shadow-2xl shadow-emerald-900/40 active:scale-95 transition-all mt-4"
-              >
-                Sync Financial Hub <Save size={18} className="inline ml-1" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'OVERVIEW' && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-900 p-5 rounded-[32px] border border-white/5 shadow-xl relative overflow-hidden">
-               <div className="relative z-10">
-                 <Users className="text-emerald-500 mb-2" size={20} />
-                 <h3 className="text-2xl font-bold text-white tracking-tight">{analytics.totalSignups.toLocaleString()}</h3>
-                 <p className="text-[8px] font-medium text-white/40 uppercase tracking-widest">Total Registered Users</p>
-               </div>
-               <BarChart3 className="absolute -bottom-4 -right-4 text-white/5" size={80} />
-            </div>
-
-            <div className="bg-slate-900 p-5 rounded-[32px] border border-white/5 shadow-xl relative overflow-hidden">
-               <div className="relative z-10">
-                 <Activity className="text-blue-500 mb-2" size={20} />
-                 <h3 className="text-2xl font-bold text-white tracking-tight">{analytics.activeLast72h.toLocaleString()}</h3>
-                 <p className="text-[8px] font-medium text-white/40 uppercase tracking-widest">Active Users (72h)</p>
-               </div>
-               <Zap className="absolute -bottom-4 -right-4 text-white/5" size={80} />
-            </div>
-          </div>
-
-          <div className="bg-slate-950 p-6 rounded-[40px] border border-emerald-500/20 shadow-2xl relative overflow-hidden">
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
-                <span className="text-[9px] font-semibold text-emerald-500 uppercase tracking-[2px]">Real-time Pulse</span>
-              </div>
-              <div className="bg-emerald-500/10 px-3 py-1 rounded-full">
-                 <span className="text-[8px] font-semibold text-emerald-400 uppercase tracking-widest">Live Now</span>
-              </div>
-            </div>
-            
-            <div className="flex items-baseline gap-2 mb-1">
-              <h2 className="text-5xl font-bold text-white tracking-tighter">{analytics.currentlyOnline.toLocaleString()}</h2>
-              <span className="text-emerald-500 font-semibold text-xs uppercase">Users Online</span>
-            </div>
-            <p className="text-[10px] text-white/30 font-medium uppercase tracking-widest">Global sessions currently active</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white p-5 rounded-[32px] custom-shadow border border-slate-50 flex flex-col gap-2">
-              <div className="bg-blue-50 w-10 h-10 rounded-xl flex items-center justify-center text-blue-600">
-                <PlaySquare size={20} />
-              </div>
-              <h4 className="text-xl font-bold text-slate-900 tracking-tight">{analytics.tutorialViewsLast72h.toLocaleString()}</h4>
-              <p className="text-[8px] font-medium text-slate-400 uppercase tracking-widest">Tutorial Views (72h)</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-[32px] custom-shadow border border-slate-50 flex flex-col gap-2">
-              <div className="bg-rose-50 w-10 h-10 rounded-xl flex items-center justify-center text-rose-600">
-                <UserMinus size={20} />
-              </div>
-              <h4 className="text-xl font-bold text-slate-900 tracking-tight">{analytics.uninstalls.toLocaleString()}</h4>
-              <p className="text-[8px] font-medium text-slate-400 uppercase tracking-widest">Uninstalled Count</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {activeTab === 'LEADS' && (
-        pendingLeads.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-[40px] border-2 border-dashed border-slate-100">
-            <CheckCircle2 className="text-slate-200 mx-auto mb-4" size={48} />
-            <p className="text-slate-400 font-medium uppercase tracking-widest text-[10px]">All submissions reviewed</p>
+        submissions.filter(s => s.status === TaskStatus.PENDING).length === 0 ? (
+          <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-[50px] border-2 border-dashed border-slate-100 dark:border-slate-800 animate-in fade-in duration-500">
+            <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 className="text-slate-200 dark:text-slate-700" size={48} />
+            </div>
+            <p className="text-slate-400 dark:text-slate-500 font-black uppercase tracking-[5px] text-[10px]">Zero Pending Leads</p>
           </div>
         ) : (
           <SubmissionList groupedItems={groupedPending} tabType="LEADS" />
@@ -741,329 +563,50 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ analytics, submissions, withd
       )}
 
       {activeTab === 'RECEIVED' && (
-        receivedLeads.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-[40px] border-2 border-dashed border-slate-100">
-            <HistoryIcon className="text-slate-200 mx-auto mb-4" size={48} />
-            <p className="text-slate-400 font-medium uppercase tracking-widest text-[10px]">No received history</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-             <div className="bg-slate-900 text-white p-6 rounded-[32px] mb-4 shadow-xl">
-               <p className="text-[9px] font-medium uppercase tracking-widest opacity-60 mb-1">Received Status Hub</p>
-               <h3 className="text-3xl font-bold tracking-tight">৳{waitingPayoutValue.toLocaleString()}</h3>
-               <p className="text-[8px] font-medium text-white/40 uppercase tracking-widest mt-1">Value waiting for payout</p>
-             </div>
-             <SubmissionList groupedItems={groupedReceived} tabType="RECEIVED" />
-          </div>
-        )
+        <SubmissionList groupedItems={groupedReceived} tabType="RECEIVED" />
       )}
 
-      {activeTab === 'TASKS' && (
-        <div className="space-y-6">
-          {showTaskForm && (
-            <div ref={formRef} className={`rounded-[40px] p-6 text-white custom-shadow transition-all animate-in slide-in-from-top-4 duration-300 ${editingTask ? 'bg-indigo-950' : 'bg-slate-900'}`}>
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-xl bg-white/10 ${editingTask ? 'text-indigo-400' : 'text-emerald-400'}`}>
-                    {editingTask ? <Edit3 size={18} /> : <Plus size={18} />}
-                  </div>
-                  <h3 className="text-sm font-semibold uppercase tracking-widest">
-                    {editingTask ? 'Edit Task Listing' : 'Setup New Daily Task'}
-                  </h3>
-                </div>
-                <button onClick={resetForm} className="text-white/40 hover:text-white p-2 hover:bg-white/5 rounded-full"><X size={20} /></button>
-              </div>
-              <form onSubmit={handleSubmitForm} className="space-y-5">
-                <div>
-                  <label className="block text-[9px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Task Title</label>
-                  <input type="text" value={formTask.title} onChange={(e) => setFormTask({...formTask, title: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-[13px] font-semibold focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10" placeholder="e.g. Instagram Account Verification" required />
-                </div>
-                
-                <div>
-                  <label className="block text-[9px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Tutorial Video Link (YouTube)</label>
-                  <div className="relative">
-                    <input type="text" value={formTask.tutorialUrl} onChange={(e) => setFormTask({...formTask, tutorialUrl: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-12 text-[13px] font-semibold focus:outline-none focus:border-white/30 transition-all placeholder:text-white/20" placeholder="https://youtube.com/watch?v=..." />
-                    <PlayCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-center gap-4 py-2">
-                  <label className="w-full text-[9px] font-medium text-white/40 uppercase tracking-widest mb-1 ml-1">Icon / Illustration</label>
-                  <div onClick={() => fileInputRef.current?.click()} className="w-full h-32 bg-white/5 border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center text-white/40 cursor-pointer hover:bg-white/10 hover:border-white/30 transition-all overflow-hidden" >
-                    {formTask.icon.startsWith('data:image') || formTask.icon.startsWith('http') ? (
-                      <div className="relative w-full h-full group">
-                        <img src={formTask.icon} alt="Preview" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                          <Upload size={24} className="text-white" />
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="p-3 bg-white/5 rounded-2xl mb-2"><Upload size={24} className="text-white/40" /></div>
-                        <span className="text-[10px] font-medium uppercase tracking-widest">Upload Custom Icon</span>
-                      </>
-                    )}
-                  </div>
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleIconUpload} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[9px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Reward Rate (৳)</label>
-                    <input type="number" value={formTask.rate} onChange={(e) => setFormTask({...formTask, rate: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm font-bold focus:outline-none" required />
-                  </div>
-                  <div>
-                    <label className="block text-[9px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Reward Unit</label>
-                    <input 
-                      type="text" 
-                      value={formTask.rateType} 
-                      onChange={(e) => setFormTask({...formTask, rateType: e.target.value})} 
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-[13px] font-semibold focus:outline-none focus:border-white/30 transition-all placeholder:text-white/40 text-white" 
-                      placeholder="e.g. ID, 1K, STAR" 
-                      required 
-                    />
-                  </div>
-                </div>
-                <button type="submit" className={`w-full py-5 rounded-2xl font-semibold text-[11px] uppercase tracking-[2px] transition-all shadow-2xl active:scale-[0.98] ${editingTask ? 'bg-indigo-600 shadow-indigo-500/20' : 'bg-emerald-600 shadow-emerald-500/20'}`}>
-                  {editingTask ? 'Confirm Task Updates' : 'Publish Daily Task'}
-                </button>
-              </form>
-            </div>
-          )}
-          {!showTaskForm && (
-            <button onClick={() => setShowTaskForm(true)} className="w-full py-12 border-2 border-dashed border-slate-200 rounded-[40px] flex flex-col items-center justify-center gap-3 text-slate-400 hover:border-emerald-500 hover:text-emerald-600 transition-all bg-white shadow-sm" >
-              <div className="bg-slate-50 p-4 rounded-3xl"><Plus size={32} /></div>
-              <span className="text-[11px] font-semibold uppercase tracking-[3px]">Create New Task Listing</span>
-            </button>
-          )}
-          <div className="space-y-4">
-            <h3 className="text-[10px] font-semibold text-slate-800 flex items-center gap-2 uppercase tracking-widest px-2"><LayoutList size={14} className="text-slate-400" /> Active Inventory ({tasks.length})</h3>
-            <div className="grid grid-cols-1 gap-3">
-              {tasks.map((task) => (
-                <div key={task.id} className="bg-white p-4 rounded-[30px] flex items-center gap-4 custom-shadow border border-slate-50 group transition-all">
-                  <div className={`${task.color} w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner shrink-0 overflow-hidden relative`}>
-                    <div className="absolute inset-0 bg-white/10"></div>
-                    {renderIcon(task.icon)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-slate-900 text-[13px] truncate tracking-tight leading-none">{task.title}</h4>
-                    <div className="flex items-center gap-2 mt-2">
-                       <span className="bg-emerald-50 text-emerald-600 font-bold text-[9px] px-2 py-0.5 rounded-full uppercase tracking-tighter">৳{task.rate}/{getUnitLabel(task.rateType)}</span>
-                       {task.tutorialUrl && <span className="bg-blue-50 text-blue-600 font-semibold text-[7px] px-1.5 py-0.5 rounded-full uppercase tracking-tighter flex items-center gap-1"><PlayCircle size={8}/> Video</span>}
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => setEditingTask(task)} className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 flex items-center justify-center transition-all"><Edit3 size={16} /></button>
-                    <button onClick={() => onDeleteTask(task.id)} className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all"><Trash2 size={16} /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+      {activeTab === 'FINANCE' && (
+        <FinanceManagement />
       )}
 
       {activeTab === 'TUTORIAL_MANAGE' && (
-        <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
-          <div className="bg-slate-900 rounded-[40px] p-8 text-white shadow-2xl">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <Video size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold tracking-tight leading-none">Global Learner Hub</h3>
-                <p className="text-[10px] font-medium text-white/30 uppercase tracking-widest mt-1">Configure Onboarding & Support</p>
-              </div>
+        <RoadmapManagement />
+      )}
+
+      {activeTab === 'SECURITY' && (
+        <div className="bg-slate-950 dark:bg-slate-900 rounded-[40px] p-10 text-white shadow-2xl relative overflow-hidden transition-all duration-500 animate-in slide-in-from-bottom-4">
+          <div className="absolute top-0 right-0 p-8 opacity-5"><Lock size={120} /></div>
+          <h3 className="text-xl font-black tracking-tight mb-10 flex items-center gap-4">
+             <div className="p-3 bg-emerald-600 rounded-2xl shadow-xl shadow-emerald-500/20"><Lock size={24}/></div>
+             Admin Access Control
+          </h3>
+          <form onSubmit={handleUpdateSecurity} className="space-y-6">
+            <div className="space-y-2">
+               <label className="text-[9px] font-black text-white/40 uppercase tracking-[4px] ml-1">Identity Username</label>
+               <input 
+                 type="text" 
+                 value={secUsername}
+                 onChange={e => setSecUsername(e.target.value)}
+                 className="w-full bg-white/5 border border-white/10 p-5 rounded-3xl text-sm font-bold focus:outline-none focus:border-emerald-500 transition-all text-white" 
+                 placeholder="Enter new username" 
+               />
             </div>
-
-            <div className="space-y-6">
-              {/* Task Entry Point */}
-              <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 mb-4">
-                <div className="flex items-center gap-3 mb-4">
-                   <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white">
-                      <Layout size={16} />
-                   </div>
-                   <h4 className="text-[11px] font-semibold uppercase tracking-widest">Inventory Control</h4>
-                </div>
-                <button 
-                  onClick={() => { setActiveTab('TASKS'); setShowTaskForm(true); }}
-                  className="w-full bg-white text-slate-900 py-4 rounded-2xl font-semibold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all active:scale-95"
-                >
-                  <PlusCircle size={16} /> Add New Task to Inventory
-                </button>
-              </div>
-
-              {/* Support Settings Section */}
-              <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 mb-4">
-                <div className="flex items-center gap-3 mb-4">
-                   <div className="w-8 h-8 bg-emerald-600 rounded-xl flex items-center justify-center text-white">
-                      <MessageSquare size={16} />
-                   </div>
-                   <h4 className="text-[11px] font-semibold uppercase tracking-widest">Support Settings</h4>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[9px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Support Telegram Username</label>
-                    <div className="relative">
-                      <input 
-                        type="text" 
-                        value={editTutorial.supportTelegram} 
-                        onChange={(e) => setEditTutorial({...editTutorial, supportTelegram: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-[13px] font-semibold focus:outline-none focus:border-emerald-500 transition-all text-white" 
-                        placeholder="TelegramUsername" 
-                      />
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 font-bold">@</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[9px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Official Telegram Channel</label>
-                    <div className="relative">
-                      <input 
-                        type="text" 
-                        value={editTutorial.telegramChannel} 
-                        onChange={(e) => setEditTutorial({...editTutorial, telegramChannel: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-[13px] font-semibold focus:outline-none focus:border-amber-500 transition-all text-white" 
-                        placeholder="ChannelUsername" 
-                      />
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20">
-                         <Megaphone size={16} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-medium text-white/40 uppercase tracking-widest mb-2 ml-1">Main Landing Video (YouTube URL)</label>
-                <input 
-                  type="text" 
-                  value={editTutorial.heroVideoUrl} 
-                  onChange={(e) => setEditTutorial({...editTutorial, heroVideoUrl: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-[13px] font-semibold focus:outline-none focus:border-white/30 transition-all text-white" 
-                  placeholder="https://..." 
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-4 px-1">
-                  <label className="block text-[10px] font-medium text-white/40 uppercase tracking-widest flex items-center gap-2">
-                    <ListOrdered size={14} /> Roadmap Steps ({editTutorial.steps.length})
-                  </label>
-                  <button 
-                    onClick={handleAddRoadmapStep}
-                    className="text-[9px] font-semibold text-emerald-400 uppercase tracking-widest flex items-center gap-1 hover:underline"
-                  >
-                    <PlusCircle size={12} /> Add Step
-                  </button>
-                </div>
-                
-                <div className="space-y-8">
-                  {editTutorial.steps.map((step, idx) => (
-                    <div key={step.id} className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-4 relative group">
-                      <button 
-                        onClick={() => handleRemoveRoadmapStep(idx)}
-                        className="absolute -top-2 -right-2 w-7 h-7 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-
-                      <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                        <span className="text-[9px] font-medium text-emerald-400 uppercase tracking-widest">Step 0{idx + 1} Editor</span>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <label className="block text-[8px] font-medium text-white/20 uppercase tracking-widest">Title & Description</label>
-                        <input 
-                          type="text" 
-                          value={step.title} 
-                          onChange={(e) => handleTutorialUpdateStep(idx, 'title', e.target.value)}
-                          className="w-full bg-transparent border-b border-white/10 py-1 text-sm font-semibold focus:outline-none focus:border-emerald-500 transition-all" 
-                          placeholder="Step Title" 
-                        />
-                        <textarea 
-                          value={step.desc} 
-                          onChange={(e) => handleTutorialUpdateStep(idx, 'desc', e.target.value)}
-                          className="w-full bg-transparent text-[11px] font-medium text-white/60 focus:outline-none resize-none h-16 border border-white/5 p-2 rounded-xl mt-1" 
-                          placeholder="Step Description" 
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 pt-2">
-                        <div className="space-y-2">
-                          <label className="block text-[8px] font-medium text-white/20 uppercase tracking-widest flex items-center gap-1"><Edit3 size={8}/> Button Label</label>
-                          <input 
-                            type="text" 
-                            value={step.buttonText || ''} 
-                            onChange={(e) => handleTutorialUpdateStep(idx, 'buttonText', e.target.value)}
-                            className="w-full bg-white/5 rounded-xl px-3 py-2 text-[10px] font-semibold focus:outline-none focus:bg-white/10" 
-                            placeholder="e.g. Watch Video" 
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="block text-[8px] font-medium text-white/20 uppercase tracking-widest flex items-center gap-1"><Link size={8}/> Action Link</label>
-                          <input 
-                            type="text" 
-                            value={step.buttonUrl || ''} 
-                            onChange={(e) => handleTutorialUpdateStep(idx, 'buttonUrl', e.target.value)}
-                            className="w-full bg-white/5 rounded-xl px-3 py-2 text-[10px] font-semibold focus:outline-none focus:bg-white/10" 
-                            placeholder="https://..." 
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <button 
-                onClick={handleSaveTutorialConfig}
-                className="w-full bg-emerald-600 py-6 rounded-[32px] text-white font-semibold text-[11px] uppercase tracking-[3px] shadow-2xl shadow-emerald-900/40 active:scale-95 transition-all mt-4"
-              >
-                Save All Config
-              </button>
+            <div className="space-y-2">
+               <label className="text-[9px] font-black text-white/40 uppercase tracking-[4px] ml-1">Secret Access Key</label>
+               <input 
+                 type="password"  
+                 value={secPassword}
+                 onChange={e => setSecPassword(e.target.value)}
+                 className="w-full bg-white/5 border border-white/10 p-5 rounded-3xl text-sm font-bold focus:outline-none focus:border-emerald-500 transition-all text-white" 
+                 placeholder="Enter new password" 
+               />
             </div>
-          </div>
+            <button type="submit" className="w-full bg-white text-slate-900 py-6 rounded-3xl text-[12px] font-black uppercase tracking-[5px] shadow-2xl active:scale-95 transition-all mt-4">Commit Security Updates</button>
+          </form>
         </div>
       )}
 
-      {activeTab === 'WITHDRAWALS' && (
-        withdrawals.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-[40px] border-2 border-dashed border-slate-100">
-            <Wallet className="text-slate-200 mx-auto mb-4" size={48} />
-            <p className="text-slate-400 font-medium uppercase tracking-widest text-[10px]">No payout requests found</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {withdrawals.map((wd) => (
-              <div key={wd.id} className="bg-white rounded-[32px] p-5 custom-shadow border border-slate-50 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm">
-                      <CreditCard size={22} />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-[13px] text-slate-900 leading-none tracking-tight">Withdrawal Hub</h4>
-                      <p className="text-[10px] font-semibold text-emerald-600 uppercase mt-1.5 tracking-widest">{wd.method}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <h3 className="text-xl font-bold text-slate-900">৳{wd.amount}</h3>
-                    <p className="text-[8px] font-medium text-slate-400 uppercase tracking-widest">Request Amount</p>
-                  </div>
-                </div>
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <p className="text-[9px] font-medium text-slate-400 uppercase mb-1.5 tracking-widest flex items-center gap-1.5"><Info size={12} /> Account Verification Info</p>
-                  <p className="text-[11px] font-semibold text-slate-800 break-all">{wd.details?.replace('Account: ', '')}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => onWithdrawAction(wd.id, TaskStatus.REJECTED)} className="bg-white text-rose-500 py-4 rounded-2xl font-semibold text-[10px] uppercase tracking-widest border border-rose-50 active:scale-95 transition-all">Reject Payout</button>
-                  <button onClick={() => onWithdrawAction(wd.id, TaskStatus.APPROVED)} className="bg-slate-900 text-white py-4 rounded-2xl font-semibold text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">Confirm Payout</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )
-      )}
       <div className="h-32"></div>
     </div>
   );

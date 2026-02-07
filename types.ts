@@ -1,4 +1,3 @@
-
 export type Screen = 'AUTH' | 'HOME' | 'WALLET' | 'PROFILE' | 'SUBMIT_TASK' | 'ADMIN' | 'WITHDRAW' | 'TUTORIAL' | 'ACCOUNT_SETTINGS';
 
 export enum TaskStatus {
@@ -48,7 +47,7 @@ export interface TutorialStep {
   id: string;
   title: string;
   desc: string;
-  iconType: 'check' | 'book' | 'star' | 'info';
+  icon: string;
   buttonText?: string;
   buttonUrl?: string;
 }

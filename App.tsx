@@ -23,6 +23,31 @@ const App: React.FC = () => {
   const STORAGE_KEY_TUTORIAL = 'akibpay_tutorial_config';
   const STORAGE_KEY_CONFIG = 'akibpay_app_config';
   const STORAGE_KEY_CURRENT_USER = 'akibpay_current_session';
+  const STORAGE_KEY_THEME = 'akibpay_theme';
+
+  const COOLDOWN_HOURS = 12;
+  const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000;
+
+  // Theme State
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_THEME);
+    return (saved as 'light' | 'dark') || 'light';
+  });
+
+  // Sync theme with document element for global Tailwind support
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem(STORAGE_KEY_THEME, theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   // Initialize state from local storage or defaults
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -79,10 +104,10 @@ const App: React.FC = () => {
       supportTelegram: 'AkibPaySupport',
       telegramChannel: 'AkibPayOfficial',
       steps: [
-        { id: '1', title: 'Complete Profile', desc: 'Ensure your account is verified for higher payouts.', iconType: 'check' },
-        { id: '2', title: 'Select a Task', desc: 'Browse daily inventory and choose tasks you like.', iconType: 'book' },
-        { id: '3', title: 'Submit Evidence', desc: 'Take screenshots as proof of your work completion.', iconType: 'info' },
-        { id: '4', title: 'Request Payout', desc: 'Withdraw your earnings instantly to bKash or Nagad.', iconType: 'star' },
+        { id: '1', title: 'Complete Profile', desc: 'Ensure your account is verified for higher payouts.', icon: '👤' },
+        { id: '2', title: 'Select a Task', desc: 'Browse daily inventory and choose tasks you like.', icon: '📋' },
+        { id: '3', title: 'Submit Evidence', desc: 'Take screenshots as proof of your work completion.', icon: '🖼️' },
+        { id: '4', title: 'Request Payout', desc: 'Withdraw your earnings instantly to bKash or Nagad.', icon: '💸' },
       ]
     };
     return saved ? JSON.parse(saved) : defaultTutorial;
@@ -157,6 +182,28 @@ const App: React.FC = () => {
     setTimeout(() => setNotification(null), 5000);
   };
 
+  const handleNotificationIconClick = () => {
+    showSmsNotification("Notifications", "You have no new notifications at this time.");
+  };
+
+  const getTaskCooldown = (taskId: string) => {
+    const userSubmissions = submissions.filter(s => s.userEmail === userProfile.email && s.taskId === taskId);
+    if (userSubmissions.length === 0) return null;
+
+    const lastSub = userSubmissions.reduce((latest, current) => {
+      return new Date(current.timestamp).getTime() > new Date(latest.timestamp).getTime() ? current : latest;
+    });
+
+    const lastTime = new Date(lastSub.timestamp).getTime();
+    const currentTime = Date.now();
+    const diff = currentTime - lastTime;
+
+    if (diff < COOLDOWN_MS) {
+      return COOLDOWN_MS - diff; // Remaining time in MS
+    }
+    return null;
+  };
+
   const handleAuthAttempt = (email: string, password?: string): { success: boolean, error?: string, user?: UserAccount } => {
     const emailLower = email.toLowerCase().trim();
     const user = registeredUsers.find(u => u.email.toLowerCase().trim() === emailLower);
@@ -206,6 +253,14 @@ const App: React.FC = () => {
   };
 
   const handleTaskClick = (task: Task) => {
+    const cooldownRemaining = getTaskCooldown(task.id);
+    if (cooldownRemaining !== null) {
+      const remainingMinutes = Math.ceil(cooldownRemaining / 60000);
+      const hours = Math.floor(remainingMinutes / 60);
+      const mins = remainingMinutes % 60;
+      showSmsNotification("Task Restricted", `You can submit this task again in ${hours}h ${mins}m.`);
+      return;
+    }
     setSelectedTask(task);
     setCurrentScreen('SUBMIT_TASK');
   };
@@ -362,7 +417,19 @@ const App: React.FC = () => {
 
   const renderScreen = () => {
     if (!isLoggedIn) return <LoginScreen onLogin={handleLogin} onSignup={handleSignup} onAuthAttempt={handleAuthAttempt} />;
-    if (currentScreen === 'ADMIN_LOGIN' && !isAdminAuthenticated) return <AdminLoginScreen credentials={adminCreds} onLoginSuccess={() => setIsAdminAuthenticated(true)} onBack={() => setCurrentScreen('PROFILE')} />;
+    
+    // Updated Logic: Use explicitly currentScreen to prevent fall-through during state transitions
+    if (currentScreen === 'ADMIN_LOGIN' && !isAdminAuthenticated) {
+      return <AdminLoginScreen 
+        credentials={adminCreds} 
+        onLoginSuccess={() => {
+          setIsAdminAuthenticated(true);
+          setCurrentScreen('ADMIN'); // CRITICAL: Transition to ADMIN screen upon success
+        }} 
+        onBack={() => setCurrentScreen('PROFILE')} 
+      />;
+    }
+    
     if (isAdminAuthenticated && currentScreen === 'ADMIN') {
       return (
         <AdminScreen 
@@ -376,27 +443,27 @@ const App: React.FC = () => {
     }
 
     switch (currentScreen) {
-      case 'HOME': return <HomeScreen balance={activeBalance} tasks={tasks} onTaskClick={handleTaskClick} userName={userProfile.name} />;
+      case 'HOME': return <HomeScreen balance={activeBalance} tasks={tasks} onTaskClick={handleTaskClick} onNotificationClick={handleNotificationIconClick} userName={userProfile.name} getTaskCooldown={getTaskCooldown} isAdminAuthenticated={isAdminAuthenticated} onUpdateTask={handleUpdateTask} />;
       case 'WALLET': return <WalletScreen balance={activeBalance} appConfig={appConfig} transactions={transactions.filter(t => t.userEmail === userProfile.email)} onWithdrawClick={() => setCurrentScreen('WITHDRAW')} />;
-      case 'SUBMIT_TASK': return selectedTask ? <SubmitTaskScreen task={selectedTask} onSubmit={handleSubmitTask} onBack={() => setCurrentScreen('HOME')} /> : <HomeScreen balance={activeBalance} tasks={tasks} onTaskClick={handleTaskClick} userName={userProfile.name} />;
+      case 'SUBMIT_TASK': return selectedTask ? <SubmitTaskScreen task={selectedTask} onSubmit={handleSubmitTask} onBack={() => setCurrentScreen('HOME')} /> : <HomeScreen balance={activeBalance} tasks={tasks} onTaskClick={handleTaskClick} onNotificationClick={handleNotificationIconClick} userName={userProfile.name} getTaskCooldown={getTaskCooldown} isAdminAuthenticated={isAdminAuthenticated} onUpdateTask={handleUpdateTask} />;
       case 'WITHDRAW': return <WithdrawScreen availableBalance={activeBalance.available} appConfig={appConfig} onSubmit={handleWithdrawSubmit} onBack={() => setCurrentScreen('WALLET')} />;
-      case 'PROFILE': return <ProfileScreen userProfile={userProfile} supportTelegram={tutorialConfig.supportTelegram} telegramChannel={tutorialConfig.telegramChannel} onAdminClick={() => isAdminAuthenticated ? setCurrentScreen('ADMIN') : setCurrentScreen('ADMIN_LOGIN')} onSettingsClick={() => setCurrentScreen('ACCOUNT_SETTINGS')} onLogout={handleLogout} />;
+      case 'PROFILE': return <ProfileScreen userProfile={userProfile} theme={theme} onToggleTheme={toggleTheme} supportTelegram={tutorialConfig.supportTelegram} telegramChannel={tutorialConfig.telegramChannel} onAdminClick={() => isAdminAuthenticated ? setCurrentScreen('ADMIN') : setCurrentScreen('ADMIN_LOGIN')} onSettingsClick={() => setCurrentScreen('ACCOUNT_SETTINGS')} onLogout={handleLogout} />;
       case 'TUTORIAL': return <TutorialScreen config={tutorialConfig} />;
       case 'ACCOUNT_SETTINGS': return <AccountSettingsScreen profile={userProfile} onSave={handleSaveProfile} onBack={() => setCurrentScreen('PROFILE')} />;
-      default: return <HomeScreen balance={activeBalance} tasks={tasks} onTaskClick={handleTaskClick} userName={userProfile.name} />;
+      default: return <HomeScreen balance={activeBalance} tasks={tasks} onTaskClick={handleTaskClick} onNotificationClick={handleNotificationIconClick} userName={userProfile.name} getTaskCooldown={getTaskCooldown} isAdminAuthenticated={isAdminAuthenticated} onUpdateTask={handleUpdateTask} />;
     }
   };
 
   return (
-    <div className="max-w-md mx-auto bg-slate-50 min-h-screen shadow-2xl relative flex flex-col font-sans">
+    <div className="max-w-md mx-auto bg-slate-50 dark:bg-slate-950 min-h-screen shadow-2xl relative flex flex-col font-sans transition-colors duration-300">
       {notification && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-[200] animate-in slide-in-from-top-4 duration-500">
-          <div className="bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl flex gap-4 items-start">
-             <div className="bg-emerald-500 p-2 rounded-xl text-white shadow-lg shadow-emerald-500/20"><Bell size={18} /></div>
-             <div>
+          <div className="bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl flex gap-4 items-start transition-colors">
+            <div className="bg-emerald-50 dark:bg-emerald-900/30 p-2 rounded-xl text-white shadow-lg shadow-emerald-500/20 transition-colors"><Bell size={18} /></div>
+            <div>
                 <h4 className="text-[11px] font-semibold text-white uppercase tracking-widest">{notification.title}</h4>
-                <p className="text-[10px] text-white/60 font-medium leading-tight mt-1">{notification.body}</p>
-             </div>
+                <p className="text-[10px] text-white/60 dark:text-white/80 font-medium leading-tight mt-1 transition-colors">{notification.body}</p>
+            </div>
           </div>
         </div>
       )}
@@ -404,17 +471,17 @@ const App: React.FC = () => {
       <div className="flex-1 overflow-y-auto no-scrollbar">{renderScreen()}</div>
 
       {isLoggedIn && currentScreen !== 'SUBMIT_TASK' && currentScreen !== 'WITHDRAW' && currentScreen !== 'ADMIN' && currentScreen !== 'ADMIN_LOGIN' && (
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/80 backdrop-blur-xl border-t border-slate-100 px-6 py-4 flex justify-between items-center z-50">
-          <button onClick={() => setCurrentScreen('HOME')} className={`flex flex-col items-center gap-1 transition-all ${currentScreen === 'HOME' ? 'text-emerald-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 px-6 py-4 flex justify-between items-center z-50 transition-colors">
+          <button onClick={() => setCurrentScreen('HOME')} className={`flex flex-col items-center gap-1 transition-all ${currentScreen === 'HOME' ? 'text-emerald-600 scale-110' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>
             <Home size={22} /><span className="text-[8px] font-semibold uppercase tracking-tighter">Tasks</span>
           </button>
-          <button onClick={() => setCurrentScreen('WALLET')} className={`flex flex-col items-center gap-1 transition-all ${currentScreen === 'WALLET' ? 'text-emerald-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
+          <button onClick={() => setCurrentScreen('WALLET')} className={`flex flex-col items-center gap-1 transition-all ${currentScreen === 'WALLET' ? 'text-emerald-600 scale-110' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>
             <Wallet size={22} /><span className="text-[8px] font-semibold uppercase tracking-tighter">Wallet</span>
           </button>
-          <button onClick={() => setCurrentScreen('TUTORIAL')} className={`flex flex-col items-center gap-1 transition-all ${currentScreen === 'TUTORIAL' ? 'text-emerald-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
+          <button onClick={() => setCurrentScreen('TUTORIAL')} className={`flex flex-col items-center gap-1 transition-all ${currentScreen === 'TUTORIAL' ? 'text-emerald-600 scale-110' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>
             <PlayCircle size={22} /><span className="text-[8px] font-semibold uppercase tracking-tighter">Learn</span>
           </button>
-          <button onClick={() => setCurrentScreen('PROFILE')} className={`flex flex-col items-center gap-1 transition-all ${currentScreen === 'PROFILE' ? 'text-emerald-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
+          <button onClick={() => setCurrentScreen('PROFILE')} className={`flex flex-col items-center gap-1 transition-all ${currentScreen === 'PROFILE' ? 'text-emerald-600 scale-110' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>
             <User size={22} /><span className="text-[8px] font-semibold uppercase tracking-tighter">Profile</span>
           </button>
         </div>

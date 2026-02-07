@@ -32,22 +32,22 @@ const WithdrawScreen: React.FC<WithdrawScreenProps> = ({ availableBalance, appCo
   const selectedMethod = appConfig.withdrawalMethods.find(m => m.id === method) || appConfig.withdrawalMethods[0];
 
   return (
-    <div className="min-h-full bg-slate-50 animate-in slide-in-from-right-10 duration-500">
-      <div className="bg-white p-6 flex items-center gap-4 sticky top-0 z-10 border-b border-slate-100">
-        <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-          <ArrowLeft size={24} className="text-slate-800" />
+    <div className="min-h-full bg-slate-50 dark:bg-slate-950 animate-in slide-in-from-right-10 duration-500 transition-colors">
+      <div className="bg-white dark:bg-slate-900 p-6 flex items-center gap-4 sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800 transition-colors">
+        <button onClick={onBack} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+          <ArrowLeft size={24} className="text-slate-800 dark:text-slate-100" />
         </button>
-        <h2 className="text-xl font-semibold text-slate-800 tracking-tight">Withdraw Funds</h2>
+        <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100 tracking-tight">Withdraw Funds</h2>
       </div>
 
       <div className="p-6">
         {/* Balance Preview */}
-        <div className="bg-slate-900 p-7 rounded-[40px] text-white mb-8 shadow-2xl relative overflow-hidden">
+        <div className="bg-slate-900 p-7 rounded-[40px] text-white mb-8 shadow-2xl relative overflow-hidden border border-transparent dark:border-slate-800">
           <div className="relative z-10">
             <p className="text-slate-400 text-[10px] font-medium uppercase tracking-widest mb-2 opacity-60">Withdrawal Wallet</p>
             <div className="flex items-baseline gap-2">
               <span className="text-xl font-bold text-emerald-400">৳</span>
-              <h3 className="text-4xl font-bold tracking-tight">{availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
+              <h3 className="text-4xl font-bold tracking-tight leading-none">{availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
             </div>
           </div>
           <div className="absolute -bottom-6 -right-6 p-4 text-white/5 rotate-12">
@@ -59,8 +59,8 @@ const WithdrawScreen: React.FC<WithdrawScreenProps> = ({ availableBalance, appCo
           {/* Method Selection */}
           <div>
             <div className="flex justify-between items-end mb-4 px-1">
-               <label className="block text-slate-900 font-semibold text-[11px] uppercase tracking-widest">Payment Gateway</label>
-               <span className="text-[10px] font-medium text-slate-400">Secure Transfer</span>
+               <label className="block text-slate-900 dark:text-slate-200 font-semibold text-[11px] uppercase tracking-widest">Payment Gateway</label>
+               <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">Secure Transfer</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {appConfig.withdrawalMethods.map((m) => {
@@ -70,10 +70,10 @@ const WithdrawScreen: React.FC<WithdrawScreenProps> = ({ availableBalance, appCo
                     key={m.id}
                     type="button"
                     onClick={() => setMethod(m.id)}
-                    className={`relative p-5 rounded-[32px] border-2 transition-all flex flex-col items-center gap-3 active:scale-95 bg-white ${
+                    className={`relative p-5 rounded-[32px] border-2 transition-all flex flex-col items-center gap-3 active:scale-95 ${
                       isActive 
-                        ? `${m.color} ${m.activeBg} shadow-xl shadow-slate-200` 
-                        : 'border-slate-100 hover:border-slate-200'
+                        ? `${m.color} ${m.activeBg} shadow-xl shadow-slate-200 dark:shadow-none bg-white dark:bg-slate-800` 
+                        : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'
                     }`}
                   >
                     <div className="h-10 w-full flex items-center justify-center">
@@ -83,11 +83,11 @@ const WithdrawScreen: React.FC<WithdrawScreenProps> = ({ availableBalance, appCo
                         className={`h-full object-contain transition-all duration-300 ${isActive ? 'scale-110' : 'opacity-80'}`} 
                       />
                     </div>
-                    <span className={`text-[10px] font-semibold uppercase tracking-widest ${isActive ? 'text-slate-900' : 'text-slate-400'}`}>
+                    <span className={`text-[10px] font-semibold uppercase tracking-widest ${isActive ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'}`}>
                       {m.name}
                     </span>
                     {isActive && (
-                      <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-white border-2 border-white shadow-md ${m.color.replace('border-', 'bg-')}`}>
+                      <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-white border-2 border-white dark:border-slate-800 shadow-md ${m.color.replace('border-', 'bg-')}`}>
                         <Check size={12} strokeWidth={4} />
                       </div>
                     )}
@@ -99,17 +99,17 @@ const WithdrawScreen: React.FC<WithdrawScreenProps> = ({ availableBalance, appCo
 
           {/* Account Input */}
           <div className="space-y-3">
-            <label className="block text-slate-900 font-semibold text-[11px] uppercase tracking-widest ml-1">Account Identification</label>
+            <label className="block text-slate-900 dark:text-slate-200 font-semibold text-[11px] uppercase tracking-widest ml-1">Account Identification</label>
             <div className="relative group">
               <input 
                 type="text"
                 placeholder={method === 'Binance' ? "Enter Binance Pay ID" : `Enter 11-digit ${selectedMethod?.name || 'Account'} Number`}
                 value={account}
                 onChange={(e) => setAccount(e.target.value)}
-                className="w-full bg-white p-6 rounded-[32px] border-2 border-slate-100 focus:border-slate-900 focus:outline-none transition-all shadow-sm text-black font-semibold pl-16 placeholder:text-slate-300"
+                className="w-full bg-white dark:bg-slate-900 p-6 rounded-[32px] border-2 border-slate-100 dark:border-slate-800 focus:border-slate-900 dark:focus:border-emerald-500 focus:outline-none transition-all shadow-sm dark:shadow-none text-black dark:text-white font-semibold pl-16 placeholder:text-slate-300 dark:placeholder:text-slate-700"
                 required
               />
-              <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 transition-colors">
+              <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600 group-focus-within:text-slate-900 dark:group-focus-within:text-emerald-500 transition-colors">
                 <Smartphone size={22} />
               </div>
             </div>
@@ -117,7 +117,7 @@ const WithdrawScreen: React.FC<WithdrawScreenProps> = ({ availableBalance, appCo
 
           {/* Amount Input */}
           <div className="space-y-3">
-            <label className="block text-slate-900 font-semibold text-[11px] uppercase tracking-widest ml-1">Transfer Amount</label>
+            <label className="block text-slate-900 dark:text-slate-200 font-semibold text-[11px] uppercase tracking-widest ml-1">Transfer Amount</label>
             <div className="relative group">
               <input 
                 type="number"
@@ -125,19 +125,19 @@ const WithdrawScreen: React.FC<WithdrawScreenProps> = ({ availableBalance, appCo
                 max={availableBalance}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full bg-white p-6 rounded-[32px] border-2 border-slate-100 focus:border-slate-900 focus:outline-none transition-all shadow-sm text-black font-bold text-3xl pl-16 placeholder:text-slate-300"
+                className="w-full bg-white dark:bg-slate-900 p-6 rounded-[32px] border-2 border-slate-100 dark:border-slate-800 focus:border-slate-900 dark:focus:border-emerald-500 focus:outline-none transition-all shadow-sm dark:shadow-none text-black dark:text-white font-bold text-3xl pl-16 placeholder:text-slate-300 dark:placeholder:text-slate-700"
                 required
               />
-              <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-2xl group-focus-within:text-slate-900 transition-colors">
+              <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600 font-bold text-2xl group-focus-within:text-slate-900 dark:group-focus-within:text-emerald-500 transition-colors">
                 ৳
               </div>
             </div>
             <div className="flex justify-between mt-2 px-2">
-              <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-tight">Minimum: ৳{appConfig.minWithdrawal.toFixed(2)}</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-600 font-semibold uppercase tracking-tight">Minimum: ৳{appConfig.minWithdrawal.toFixed(2)}</p>
               <button 
                 type="button"
                 onClick={() => setAmount(availableBalance.toFixed(0))}
-                className="text-[10px] text-emerald-600 font-semibold uppercase tracking-widest hover:underline"
+                className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-widest hover:underline"
               >
                 Use Full Balance
               </button>
@@ -148,7 +148,7 @@ const WithdrawScreen: React.FC<WithdrawScreenProps> = ({ availableBalance, appCo
             <button 
               type="submit"
               disabled={isSubmitting || !canSubmit}
-              className="w-full bg-slate-900 py-6 rounded-[32px] text-white font-semibold text-[13px] shadow-2xl active:scale-[0.98] disabled:bg-slate-200 disabled:shadow-none transition-all flex items-center justify-center gap-3 uppercase tracking-[3px]"
+              className="w-full bg-slate-900 dark:bg-emerald-600 py-6 rounded-[32px] text-white font-semibold text-[13px] shadow-2xl dark:shadow-none active:scale-[0.98] disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:shadow-none transition-all flex items-center justify-center gap-3 uppercase tracking-[3px]"
             >
               {isSubmitting ? (
                 <span className="animate-pulse">Processing...</span>
@@ -161,14 +161,14 @@ const WithdrawScreen: React.FC<WithdrawScreenProps> = ({ availableBalance, appCo
           </div>
         </form>
 
-        <div className="mt-10 p-7 bg-white rounded-[40px] border border-slate-100 flex gap-4 shadow-sm">
-          <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 shrink-0">
+        <div className="mt-10 p-7 bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 flex gap-4 shadow-sm transition-colors">
+          <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-600 shrink-0">
             <Info size={24} />
           </div>
           <div>
-            <p className="text-slate-900 font-semibold text-[11px] uppercase tracking-widest mb-1.5">Payout Protocol</p>
-            <p className="text-slate-500 text-[10px] leading-relaxed font-medium uppercase tracking-tight opacity-70">
-              Funds are disbursed via secure gateway within 24-72 hours. Ensure account details match your official registration.
+            <p className="text-slate-900 dark:text-slate-100 font-semibold text-[11px] uppercase tracking-widest mb-1.5">Payout Protocol</p>
+            <p className="text-slate-500 dark:text-slate-500 text-[10px] leading-relaxed font-medium uppercase tracking-tight opacity-70">
+              Funds are disbursed via secure gateway within 24-72 hours. Ensure account details match your registration.
             </p>
           </div>
         </div>
