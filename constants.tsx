@@ -1,4 +1,3 @@
-
 import { Task, TaskStatus, Transaction, Submission } from './types';
 
 export const MOCK_TASKS: Task[] = [
@@ -56,7 +55,6 @@ export const MOCK_TASKS: Task[] = [
   }
 ];
 
-// Added userEmail to mock transactions to satisfy Transaction interface requirements
 export const MOCK_TRANSACTIONS: Transaction[] = [
   { id: 'tr1', userEmail: 'rahat@test.com', taskName: 'Facebook 2FA Setup', amount: 7, date: '2023-10-24', status: TaskStatus.APPROVED },
   { id: 'tr2', userEmail: 'rahat@test.com', taskName: 'Instagram ID Follow', amount: 3, date: '2023-10-24', status: TaskStatus.PENDING },
@@ -64,7 +62,6 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
   { id: 'tr4', userEmail: 'rahat@test.com', taskName: 'YouTube Sub & Like', amount: 4, date: '2023-10-22', status: TaskStatus.REJECTED },
 ];
 
-// Added userEmail to mock submissions to satisfy Submission interface requirements
 export const MOCK_SUBMISSIONS: Submission[] = [
   {
     id: 'sub1',

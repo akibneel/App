@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Screen, Task, TaskStatus, Transaction, Submission, TutorialConfig, UserProfile, AppAnalytics, AdminCredentials, UserAccount, UserBalance, AppConfig } from './types.ts';
-import { MOCK_TASKS } from './constants.tsx';
-import HomeScreen from './components/HomeScreen.tsx';
-import WalletScreen from './components/WalletScreen.tsx';
-import SubmitTaskScreen from './components/SubmitTaskScreen.tsx';
-import WithdrawScreen from './components/WithdrawScreen.tsx';
-import AdminScreen from './components/AdminScreen.tsx';
-import AdminLoginScreen from './components/AdminLoginScreen.tsx';
-import ProfileScreen from './components/ProfileScreen.tsx';
-import LoginScreen from './components/LoginScreen.tsx';
-import TutorialScreen from './components/TutorialScreen.tsx';
-import AccountSettingsScreen from './components/AccountSettingsScreen.tsx';
+import { Screen, Task, TaskStatus, Transaction, Submission, TutorialConfig, UserProfile, AdminCredentials, UserAccount, UserBalance, AppConfig } from './types';
+import { MOCK_TASKS } from './constants';
+import HomeScreen from './components/HomeScreen';
+import WalletScreen from './components/WalletScreen';
+import SubmitTaskScreen from './components/SubmitTaskScreen';
+import WithdrawScreen from './components/WithdrawScreen';
+import AdminScreen from './components/AdminScreen';
+import AdminLoginScreen from './components/AdminLoginScreen';
+import ProfileScreen from './components/ProfileScreen';
+import LoginScreen from './components/LoginScreen';
+import TutorialScreen from './components/TutorialScreen';
+import AccountSettingsScreen from './components/AccountSettingsScreen';
 import { Home, Wallet, User, Bell, PlayCircle } from 'lucide-react';
 
 const App: React.FC = () => {
