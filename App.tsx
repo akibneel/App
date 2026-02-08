@@ -103,8 +103,10 @@ const App: React.FC = () => {
   }));
 
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
-    const saved = safeParse<any>(STORAGE_KEY_CURRENT_USER, null);
-    return saved ? { ...saved, phone: '', joinDate: 'Oct 2023' } : { name: 'Guest User', email: '', phone: '', joinDate: 'Oct 2023' };
+    const saved = safeParse<UserAccount | null>(STORAGE_KEY_CURRENT_USER, null);
+    return saved 
+      ? { name: saved.name, email: saved.email, phone: '', joinDate: 'Oct 2023' } 
+      : { name: 'Guest User', email: '', phone: '', joinDate: 'Oct 2023' };
   });
 
   const activeBalance = userBalances[userProfile.email] || { total: 0, available: 0, pending: 0 };
@@ -229,7 +231,7 @@ const App: React.FC = () => {
     };
     setTransactions(prev => [transaction, ...prev]);
     setUserBalances(prev => {
-      const cur = prev[userProfile.email];
+      const cur = prev[userProfile.email] || { total: 0, available: 0, pending: 0 };
       return { ...prev, [userProfile.email]: { ...cur, available: cur.available - amount } };
     });
     showSmsNotification("Withdrawal Requested", `Transfer of ৳${amount} is processing.`);
@@ -239,7 +241,7 @@ const App: React.FC = () => {
   const renderScreen = () => {
     if (!isLoggedIn) return <LoginScreen onLogin={u => {
       localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify(u));
-      setUserProfile({ ...u, phone: '', joinDate: 'Oct 2023' });
+      setUserProfile({ name: u.name, email: u.email, phone: '', joinDate: 'Oct 2023' });
       setIsLoggedIn(true);
       setCurrentScreen('HOME');
     }} onSignup={u => setRegisteredUsers(p => [...p, u])} onAuthAttempt={handleAuthAttempt} />;
